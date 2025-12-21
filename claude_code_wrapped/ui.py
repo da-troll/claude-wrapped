@@ -172,14 +172,16 @@ def create_hour_chart(distribution: list[int]) -> Panel:
             color = COLORS["orange"]
         elif 12 <= i < 18:
             color = COLORS["blue"]
-        elif 18 <= i < 22:
+        elif 18 <= i < 24:
             color = COLORS["purple"]
         else:
             color = COLORS["gray"]
         content.append(chars[idx], style=Style(color=color))
 
+    # Build aligned label (24 chars to match 24 bars)
+    # Labels at positions: 0, 6, 12, 18, with end marker
     content.append("\n")
-    content.append("0  6  12  18  24", style=Style(color=COLORS["gray"]))
+    content.append("0     6     12    18    24", style=Style(color=COLORS["gray"]))
 
     return Panel(
         Align.center(content),
