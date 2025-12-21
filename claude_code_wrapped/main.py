@@ -18,9 +18,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  claude-wrapped          Show your 2025 wrapped
-  claude-wrapped 2024     Show your 2024 wrapped
-  claude-wrapped --no-animate  Skip animations
+  claude-code-wrapped              Show your wrapped for current year
+  claude-code-wrapped 2024         Show your 2024 wrapped
+  claude-code-wrapped --no-animate Skip animations
         """,
     )
     parser.add_argument(
@@ -90,6 +90,8 @@ Examples:
             "top_projects": dict(stats.top_projects),
             "hourly_distribution": stats.hourly_distribution,
             "weekday_distribution": stats.weekday_distribution,
+            "estimated_cost_usd": stats.estimated_cost,
+            "cost_by_model": stats.cost_by_model,
         }
         print(json.dumps(output, indent=2))
     else:

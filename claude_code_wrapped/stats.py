@@ -74,6 +74,11 @@ class WrappedStats:
     avg_messages_per_day: float = 0.0
     avg_tokens_per_message: float = 0.0
 
+    # Cost tracking (per model)
+    model_token_usage: dict[str, dict[str, int]] = field(default_factory=dict)
+    estimated_cost: float | None = None
+    cost_by_model: dict[str, float] = field(default_factory=dict)
+
     @property
     def total_tokens(self) -> int:
         return (
@@ -99,7 +104,10 @@ def calculate_streaks(daily_stats: dict[str, DailyStats], year: int) -> tuple[in
     active_dates = set()
     for date_str, stats in daily_stats.items():
         if stats.message_count > 0:
-            active_dates.add(datetime.strptime(date_str, "%Y-%m-%d").date())
+            try:
+                active_dates.add(datetime.strptime(date_str, "%Y-%m-%d").date())
+            except ValueError:
+                continue
 
     if not active_dates:
         return 0, 0
@@ -118,12 +126,17 @@ def calculate_streaks(daily_stats: dict[str, DailyStats], year: int) -> tuple[in
         else:
             current_streak = 1
 
-    # Calculate current streak (counting back from today or last active day)
+    # Calculate current streak
     today = datetime.now().date()
     current = 0
 
-    # Start from today or the last day of the year
-    check_date = min(today, datetime(year, 12, 31).date())
+    # For past years, current streak is meaningless, so return 0
+    # For current year, count back from today
+    if year < today.year:
+        return longest_streak, 0
+
+    # Start from today for current year
+    check_date = today
 
     while check_date >= datetime(year, 1, 1).date():
         if check_date in active_dates:
@@ -168,28 +181,46 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
         if project_name != "Unknown":
             projects[project_name] += 1
 
-        # Token usage
+        # Model usage and token tracking
+        raw_model = msg.model  # Full model ID for accurate cost calculation
+        display_model = None  # Simplified name for display
+        if msg.model:
+            model_lower = msg.model.lower()
+            if 'opus' in model_lower:
+                display_model = 'Opus'
+            elif 'sonnet' in model_lower:
+                display_model = 'Sonnet'
+            elif 'haiku' in model_lower:
+                display_model = 'Haiku'
+            elif msg.model == '<synthetic>':
+                display_model = None  # Skip synthetic messages
+            else:
+                display_model = msg.model
+
+            if display_model:
+                stats.models_used[display_model] += 1
+
+        # Token usage (aggregate and per-model with FULL model name for accurate pricing)
         if msg.usage:
             stats.total_input_tokens += msg.usage.input_tokens
             stats.total_output_tokens += msg.usage.output_tokens
             stats.total_cache_creation_tokens += msg.usage.cache_creation_tokens
             stats.total_cache_read_tokens += msg.usage.cache_read_tokens
 
+            # Track per-model token usage for cost calculation (use raw model ID)
+            if raw_model and raw_model != '<synthetic>':
+                if raw_model not in stats.model_token_usage:
+                    stats.model_token_usage[raw_model] = {
+                        "input": 0, "output": 0, "cache_create": 0, "cache_read": 0
+                    }
+                stats.model_token_usage[raw_model]["input"] += msg.usage.input_tokens
+                stats.model_token_usage[raw_model]["output"] += msg.usage.output_tokens
+                stats.model_token_usage[raw_model]["cache_create"] += msg.usage.cache_creation_tokens
+                stats.model_token_usage[raw_model]["cache_read"] += msg.usage.cache_read_tokens
+
         # Tool usage
         for tool in msg.tool_calls:
             stats.tool_calls[tool] += 1
-
-        # Model usage
-        if msg.model:
-            # Simplify model name
-            model_name = msg.model
-            if 'opus' in model_name.lower():
-                model_name = 'Opus'
-            elif 'sonnet' in model_name.lower():
-                model_name = 'Sonnet'
-            elif 'haiku' in model_name.lower():
-                model_name = 'Haiku'
-            stats.models_used[model_name] += 1
 
         # Time-based stats
         if msg.timestamp:
@@ -255,6 +286,13 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
 
     if stats.total_assistant_messages > 0:
         stats.avg_tokens_per_message = stats.total_tokens / stats.total_assistant_messages
+
+    # Calculate estimated cost
+    from .pricing import calculate_total_cost_by_model
+    if stats.model_token_usage:
+        stats.estimated_cost, stats.cost_by_model = calculate_total_cost_by_model(
+            stats.model_token_usage
+        )
 
     return stats
 

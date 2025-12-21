@@ -12,7 +12,7 @@
                     by Banker.so
 ```
 
-Your year with Claude Code — Spotify Wrapped style.
+Your year with Claude Code, Spotify Wrapped style.
 
 ## Quick Start
 
@@ -24,15 +24,15 @@ That's it. Press `Enter` to advance through your personalized stats.
 
 ## What You'll See
 
-**Dramatic stat reveals** — one at a time, like Spotify Wrapped:
+**Dramatic stat reveals** - one at a time, like Spotify Wrapped:
 - Total messages exchanged
 - Coding sessions
 - Tokens processed
 - Your longest streak
 
-**GitHub-style contribution graph** — see your coding patterns at a glance
+**GitHub-style contribution graph** - see your coding patterns at a glance
 
-**Your coding personality** — based on your habits:
+**Your coding personality** - based on your habits:
 - 🦉 Night Owl
 - 🔥 Streak Master
 - ⚡ Terminal Warrior
@@ -42,9 +42,9 @@ That's it. Press `Enter` to advance through your personalized stats.
 - 🎯 Perfectionist
 - 💻 Dedicated Dev
 
-**Fun facts & bloopers** — like "You coded after midnight 47 times"
+**Fun facts & bloopers** - like "You coded after midnight 47 times"
 
-**Movie-style credits** — starring Claude Opus, featuring your top tools
+**Movie-style credits** - featuring your top tools, projects, and models
 
 ## Options
 
@@ -73,7 +73,7 @@ All data stays local. Nothing is sent anywhere.
 
 ## Author
 
-Built by [Mert Deveci](https://x.com/gm_mertd) — Maker of [Banker.so](https://banker.so)
+Built by [Mert Deveci](https://x.com/gm_mertd), Maker of [Banker.so](https://banker.so)
 
 ## License
 

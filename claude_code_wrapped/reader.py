@@ -33,6 +33,7 @@ class Message:
     project: str | None = None
     git_branch: str | None = None
     tool_calls: list[str] = field(default_factory=list)
+    message_id: str | None = None  # For deduplication
 
 
 @dataclass
@@ -126,6 +127,7 @@ def parse_jsonl_record(record: dict) -> Message | None:
         project=record.get('cwd'),
         git_branch=record.get('gitBranch'),
         tool_calls=extract_tool_calls(message_data.get('content', [])),
+        message_id=message_data.get('id'),  # Used for deduplication
     )
 
 
@@ -205,7 +207,11 @@ def read_stats_cache(claude_dir: Path) -> dict | None:
 
 
 def load_all_messages(claude_dir: Path | None = None, year: int | None = None) -> list[Message]:
-    """Load all messages from all sessions, optionally filtered by year."""
+    """Load all messages from all sessions, optionally filtered by year.
+
+    Deduplicates messages by message_id to avoid counting duplicate entries
+    that can occur from streaming or retries.
+    """
     if claude_dir is None:
         claude_dir = get_claude_dir()
 
@@ -216,17 +222,31 @@ def load_all_messages(claude_dir: Path | None = None, year: int | None = None) -
         messages = read_session_file(jsonl_path)
         all_messages.extend(messages)
 
+    # Deduplicate by message_id (keep the last occurrence which has final token counts)
+    seen_ids: dict[str, Message] = {}
+    unique_messages = []
+    for msg in all_messages:
+        if msg.message_id:
+            # Keep latest version (overwrite previous)
+            seen_ids[msg.message_id] = msg
+        else:
+            # Messages without ID (user messages) - keep all
+            unique_messages.append(msg)
+
+    # Add deduplicated messages
+    unique_messages.extend(seen_ids.values())
+
     # Filter by year if specified
     if year:
-        all_messages = [
-            m for m in all_messages
+        unique_messages = [
+            m for m in unique_messages
             if m.timestamp and m.timestamp.year == year
         ]
 
     # Sort by timestamp
-    all_messages.sort(key=lambda m: m.timestamp or datetime.min)
+    unique_messages.sort(key=lambda m: m.timestamp or datetime.min)
 
-    return all_messages
+    return unique_messages
 
 
 if __name__ == "__main__":

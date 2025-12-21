@@ -46,8 +46,8 @@ def wait_for_keypress():
             return ch
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    except Exception:
-        # Fallback for non-Unix systems
+    except (ImportError, AttributeError, OSError):
+        # Fallback for non-Unix systems (Windows) or piped input
         input()
         return '\n'
 
@@ -323,61 +323,105 @@ def create_fun_facts_slide(facts: list[tuple[str, str]]) -> Text:
     return text
 
 
+def simplify_model_name(model: str) -> str:
+    """Simplify a full model ID to a display name."""
+    model_lower = model.lower()
+    if 'opus-4-5' in model_lower or 'opus-4.5' in model_lower:
+        return 'Opus 4.5'
+    elif 'opus-4-1' in model_lower or 'opus-4.1' in model_lower:
+        return 'Opus 4.1'
+    elif 'opus' in model_lower:
+        return 'Opus'
+    elif 'sonnet-4-5' in model_lower or 'sonnet-4.5' in model_lower:
+        return 'Sonnet 4.5'
+    elif 'sonnet' in model_lower:
+        return 'Sonnet'
+    elif 'haiku-4-5' in model_lower or 'haiku-4.5' in model_lower:
+        return 'Haiku 4.5'
+    elif 'haiku' in model_lower:
+        return 'Haiku'
+    return model
+
+
 def create_credits_roll(stats: WrappedStats) -> list[Text]:
     """Create end credits content."""
+    from .pricing import format_cost
+
     frames = []
 
-    # Frame 1: Cast
+    # Aggregate costs by simplified model name for display
+    display_costs: dict[str, float] = {}
+    for model, cost in stats.cost_by_model.items():
+        display_name = simplify_model_name(model)
+        display_costs[display_name] = display_costs.get(display_name, 0) + cost
+
+    # Frame 1: The Numbers (cost + tokens)
+    numbers = Text()
+    numbers.append("\n\n\n")
+    numbers.append("              T H E   N U M B E R S\n\n", style=Style(color=COLORS["green"], bold=True))
+    if stats.estimated_cost is not None:
+        numbers.append(f"              Estimated Cost  ", style=Style(color=COLORS["white"], bold=True))
+        numbers.append(f"{format_cost(stats.estimated_cost)}\n", style=Style(color=COLORS["green"], bold=True))
+        for model, cost in sorted(display_costs.items(), key=lambda x: -x[1]):
+            numbers.append(f"                {model}: {format_cost(cost)}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"\n              Tokens  ", style=Style(color=COLORS["white"], bold=True))
+    numbers.append(f"{format_tokens(stats.total_tokens)}\n", style=Style(color=COLORS["orange"], bold=True))
+    numbers.append(f"                Input: {format_tokens(stats.total_input_tokens)}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"                Output: {format_tokens(stats.total_output_tokens)}\n", style=Style(color=COLORS["gray"]))
+    numbers.append("\n\n")
+    numbers.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+    frames.append(numbers)
+
+    # Frame 2: Timeline
+    timeline = Text()
+    timeline.append("\n\n\n")
+    timeline.append("              T I M E L I N E\n\n", style=Style(color=COLORS["orange"], bold=True))
+    if stats.first_message_date:
+        timeline.append("              First message  ", style=Style(color=COLORS["white"], bold=True))
+        timeline.append(f"{stats.first_message_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
+    if stats.last_message_date:
+        timeline.append("              Last message   ", style=Style(color=COLORS["white"], bold=True))
+        timeline.append(f"{stats.last_message_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
+    timeline.append(f"\n              Active days    ", style=Style(color=COLORS["white"], bold=True))
+    timeline.append(f"{stats.active_days}\n", style=Style(color=COLORS["orange"], bold=True))
+    if stats.most_active_hour is not None:
+        hour_label = "AM" if stats.most_active_hour < 12 else "PM"
+        hour_12 = stats.most_active_hour % 12 or 12
+        timeline.append(f"              Peak hour      ", style=Style(color=COLORS["white"], bold=True))
+        timeline.append(f"{hour_12}:00 {hour_label}\n", style=Style(color=COLORS["purple"], bold=True))
+    timeline.append("\n\n")
+    timeline.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+    frames.append(timeline)
+
+    # Frame 3: Cast (models)
     cast = Text()
     cast.append("\n\n\n")
-    cast.append("              S T A R R I N G\n\n", style=Style(color=COLORS["orange"], bold=True))
+    cast.append("              S T A R R I N G\n\n", style=Style(color=COLORS["purple"], bold=True))
     for model, count in stats.models_used.most_common(3):
         cast.append(f"              Claude {model}", style=Style(color=COLORS["white"], bold=True))
-        cast.append(f"  ({count:,} appearances)\n", style=Style(color=COLORS["gray"]))
+        cast.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
     cast.append("\n\n\n")
     cast.append("    [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(cast)
 
-    # Frame 2: Tools
-    tools = Text()
-    tools.append("\n\n\n")
-    tools.append("              T O O L S\n\n", style=Style(color=COLORS["blue"], bold=True))
-    for tool, count in stats.top_tools[:5]:
-        tools.append(f"              {tool}", style=Style(color=COLORS["white"], bold=True))
-        tools.append(f"  ({count:,})\n", style=Style(color=COLORS["gray"]))
-    tools.append("\n\n\n")
-    tools.append("    [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(tools)
-
-    # Frame 3: Projects
-    projects = Text()
-    projects.append("\n\n\n")
-    projects.append("              P R O J E C T S\n\n", style=Style(color=COLORS["green"], bold=True))
-    for proj, count in stats.top_projects[:5]:
-        projects.append(f"              {proj}", style=Style(color=COLORS["white"], bold=True))
-        projects.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
-    projects.append("\n\n\n")
-    projects.append("    [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(projects)
-
-    # Frame 4: Director/Producer
-    director = Text()
-    director.append("\n\n\n")
-    director.append("              D I R E C T E D   B Y\n\n", style=Style(color=COLORS["purple"], bold=True))
-    director.append("              Your Coding Journey\n\n\n", style=Style(color=COLORS["white"], bold=True))
-    director.append("              P R O D U C E D   B Y\n\n", style=Style(color=COLORS["purple"], bold=True))
-    director.append("              ", style=Style())
-    director.append("Banker.so", style=Style(color=COLORS["blue"], bold=True, link="https://banker.so"))
-    director.append("\n\n\n")
-    director.append("    [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(director)
+    # Frame 4: Projects
+    if stats.top_projects:
+        projects = Text()
+        projects.append("\n\n\n")
+        projects.append("              P R O J E C T S\n\n", style=Style(color=COLORS["blue"], bold=True))
+        for proj, count in stats.top_projects[:5]:
+            projects.append(f"              {proj}", style=Style(color=COLORS["white"], bold=True))
+            projects.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
+        projects.append("\n\n\n")
+        projects.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+        frames.append(projects)
 
     # Frame 5: Final card
     final = Text()
     final.append("\n\n\n\n")
     final.append("              See you in ", style=Style(color=COLORS["gray"]))
     final.append(f"{stats.year + 1}", style=Style(color=COLORS["orange"], bold=True))
-    final.append(" 🚀\n\n\n\n", style=Style(color=COLORS["gray"]))
+    final.append("\n\n\n\n", style=Style(color=COLORS["gray"]))
     final.append("              ", style=Style())
     final.append("Banker.so", style=Style(color=COLORS["blue"], bold=True, link="https://banker.so"))
     final.append(" presents\n\n", style=Style(color=COLORS["gray"]))
