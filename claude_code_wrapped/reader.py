@@ -209,6 +209,7 @@ def read_stats_cache(claude_dir: Path) -> dict | None:
 def load_all_messages(claude_dir: Path | None = None, year: int | None = None) -> list[Message]:
     """Load all messages from all sessions, optionally filtered by year.
 
+    Reads from both project session files (detailed) and history.jsonl (older data).
     Deduplicates messages by message_id to avoid counting duplicate entries
     that can occur from streaming or retries.
     """
@@ -217,21 +218,36 @@ def load_all_messages(claude_dir: Path | None = None, year: int | None = None) -
 
     all_messages = []
 
-    # Read from project session files
+    # Read from project session files (detailed messages with token counts)
     for project_name, jsonl_path in iter_project_sessions(claude_dir):
         messages = read_session_file(jsonl_path)
         all_messages.extend(messages)
 
+    # Also read from history.jsonl for older data that may not be in session files
+    # This captures user prompts from sessions that have been cleaned up
+    history_messages = read_history_file(claude_dir)
+    all_messages.extend(history_messages)
+
     # Deduplicate by message_id (keep the last occurrence which has final token counts)
     seen_ids: dict[str, Message] = {}
     unique_messages = []
+
+    # Track seen timestamps+content for history dedup (history has no message_id)
+    seen_history: set[tuple[str, str]] = set()
+
     for msg in all_messages:
         if msg.message_id:
             # Keep latest version (overwrite previous)
             seen_ids[msg.message_id] = msg
         else:
-            # Messages without ID (user messages) - keep all
-            unique_messages.append(msg)
+            # Messages without ID - deduplicate by timestamp+content hash
+            if msg.timestamp:
+                key = (msg.timestamp.isoformat(), msg.content[:100] if msg.content else "")
+                if key not in seen_history:
+                    seen_history.add(key)
+                    unique_messages.append(msg)
+            else:
+                unique_messages.append(msg)
 
     # Add deduplicated messages
     unique_messages.extend(seen_ids.values())
