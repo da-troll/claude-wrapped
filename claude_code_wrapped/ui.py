@@ -31,25 +31,9 @@ CONTRIB_COLORS = ["#161B22", "#0E4429", "#006D32", "#26A641", "#39D353"]
 
 
 def wait_for_keypress():
-    """Wait for user to press Enter or Space."""
-    try:
-        import termios
-        import tty
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(fd)
-            ch = sys.stdin.read(1)
-            # Also handle escape sequences for special keys
-            if ch == '\x1b':
-                sys.stdin.read(2)  # consume rest of escape sequence
-            return ch
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    except (ImportError, AttributeError, OSError):
-        # Fallback for non-Unix systems (Windows) or piped input
-        input()
-        return '\n'
+    """Wait for user to press Enter."""
+    input()
+    return '\n'
 
 
 def create_dramatic_stat(value: str, label: str, subtitle: str = "", color: str = COLORS["orange"], extra_lines: list[tuple[str, str]] = None) -> Text:
