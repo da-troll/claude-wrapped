@@ -80,6 +80,7 @@ Examples:
             "total_input_tokens": stats.total_input_tokens,
             "total_output_tokens": stats.total_output_tokens,
             "active_days": stats.active_days,
+            "late_night_days": stats.late_night_days,
             "streak_longest": stats.streak_longest,
             "streak_current": stats.streak_current,
             "most_active_hour": stats.most_active_hour,

@@ -73,6 +73,9 @@ class WrappedStats:
     # Day of week distribution (0=Monday, 6=Sunday)
     weekday_distribution: list[int] = field(default_factory=lambda: [0] * 7)
 
+    # Late night coding days (unique dates with activity between midnight and 5am)
+    late_night_days: int = 0
+
     # Fun stats
     longest_conversation_tokens: int = 0
     avg_tokens_per_message: float = 0.0
@@ -205,6 +208,9 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
     session_tokens: dict[str, int] = Counter()
     session_first_time: dict[str, datetime] = {}
 
+    # Track late night coding dates (midnight to 5am)
+    late_night_dates: set[str] = set()
+
     # Process each message
     for msg in messages:
         stats.total_messages += 1
@@ -305,6 +311,10 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
             # Hourly distribution
             stats.hourly_distribution[msg.timestamp.hour] += 1
 
+            # Track late night days (midnight to 5am)
+            if 0 <= msg.timestamp.hour < 5:
+                late_night_dates.add(msg.timestamp.strftime("%Y-%m-%d"))
+
             # Weekday distribution
             stats.weekday_distribution[msg.timestamp.weekday()] += 1
 
@@ -338,6 +348,9 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
     # Most active hour
     if any(stats.hourly_distribution):
         stats.most_active_hour = stats.hourly_distribution.index(max(stats.hourly_distribution))
+
+    # Late night days count
+    stats.late_night_days = len(late_night_dates)
 
     # Top tools
     stats.top_tools = stats.tool_calls.most_common(10)
@@ -378,26 +391,21 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
         if longest_session[0] in session_first_time:
             stats.longest_conversation_date = session_first_time[longest_session[0]]
 
-    # Calculate time periods for averages
-    today = datetime.now()
-    if year == today.year:
-        total_days = (today - datetime(year, 1, 1)).days + 1
-    else:
-        total_days = 366 if year % 4 == 0 else 365
-    total_weeks = max(1, total_days / 7)
-    total_months = max(1, total_days / 30.44)  # Average days per month
+    # Calculate averages based on ACTIVE days (like ccusage)
+    active_days = stats.active_days if stats.active_days > 0 else 1
+    active_weeks = max(1, active_days / 7)
+    active_months = max(1, active_days / 30.44)
 
-    # Message averages (over total time period, not just active days)
-    if total_days > 0:
-        stats.avg_messages_per_day = stats.total_messages / total_days
-    stats.avg_messages_per_week = stats.total_messages / total_weeks
-    stats.avg_messages_per_month = stats.total_messages / total_months
+    # Message averages (per active day)
+    stats.avg_messages_per_day = stats.total_messages / active_days
+    stats.avg_messages_per_week = stats.total_messages / active_weeks
+    stats.avg_messages_per_month = stats.total_messages / active_months
 
-    # Cost averages
-    if stats.estimated_cost is not None and total_days > 0:
-        stats.avg_cost_per_day = stats.estimated_cost / total_days
-        stats.avg_cost_per_week = stats.estimated_cost / total_weeks
-        stats.avg_cost_per_month = stats.estimated_cost / total_months
+    # Cost averages (per active day)
+    if stats.estimated_cost is not None:
+        stats.avg_cost_per_day = stats.estimated_cost / active_days
+        stats.avg_cost_per_week = stats.estimated_cost / active_weeks
+        stats.avg_cost_per_month = stats.estimated_cost / active_months
 
     # Token averages
     if stats.total_assistant_messages > 0:
@@ -407,9 +415,9 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
     stats.total_edits = stats.tool_calls.get("Edit", 0)
     stats.total_writes = stats.tool_calls.get("Write", 0)
     total_code_changes = stats.total_edits + stats.total_writes
-    if total_days > 0:
-        stats.avg_edits_per_day = total_code_changes / total_days
-        stats.avg_edits_per_week = total_code_changes / total_weeks
+    if active_days > 0:
+        stats.avg_edits_per_day = total_code_changes / active_days
+        stats.avg_edits_per_week = total_code_changes / active_weeks
 
     return stats
 

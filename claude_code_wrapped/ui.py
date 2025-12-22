@@ -268,10 +268,9 @@ def get_fun_facts(stats: WrappedStats) -> list[tuple[str, str]]:
     """Generate fun facts / bloopers based on stats - only 3 key facts."""
     facts = []
 
-    # Late night coding (midnight to 5am)
-    late_night = sum(stats.hourly_distribution[0:5])
-    if late_night > 0:
-        facts.append(("🌙", f"You coded after midnight {late_night:,} times. Sleep is overrated."))
+    # Late night coding days (midnight to 5am)
+    if stats.late_night_days > 0:
+        facts.append(("🌙", f"You coded after midnight on {stats.late_night_days} days. Sleep is overrated."))
 
     # Most active day insight
     if stats.most_active_day:
