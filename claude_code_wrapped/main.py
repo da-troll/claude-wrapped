@@ -92,6 +92,25 @@ Examples:
             "weekday_distribution": stats.weekday_distribution,
             "estimated_cost_usd": stats.estimated_cost,
             "cost_by_model": stats.cost_by_model,
+            # Averages
+            "avg_messages_per_day": round(stats.avg_messages_per_day, 1),
+            "avg_messages_per_week": round(stats.avg_messages_per_week, 1),
+            "avg_messages_per_month": round(stats.avg_messages_per_month, 1),
+            "avg_cost_per_day": round(stats.avg_cost_per_day, 2) if stats.avg_cost_per_day else None,
+            "avg_cost_per_week": round(stats.avg_cost_per_week, 2) if stats.avg_cost_per_week else None,
+            "avg_cost_per_month": round(stats.avg_cost_per_month, 2) if stats.avg_cost_per_month else None,
+            # Code activity
+            "total_edits": stats.total_edits,
+            "total_writes": stats.total_writes,
+            "avg_code_changes_per_day": round(stats.avg_edits_per_day, 1),
+            "avg_code_changes_per_week": round(stats.avg_edits_per_week, 1),
+            # Monthly breakdown
+            "monthly_costs": stats.monthly_costs,
+            "monthly_tokens": stats.monthly_tokens,
+            # Longest conversation
+            "longest_conversation_messages": stats.longest_conversation_messages,
+            "longest_conversation_tokens": stats.longest_conversation_tokens,
+            "longest_conversation_date": stats.longest_conversation_date.isoformat() if stats.longest_conversation_date else None,
         }
         print(json.dumps(output, indent=2))
     else:

@@ -71,13 +71,38 @@ class WrappedStats:
 
     # Fun stats
     longest_conversation_tokens: int = 0
-    avg_messages_per_day: float = 0.0
     avg_tokens_per_message: float = 0.0
+
+    # Averages (messages)
+    avg_messages_per_day: float = 0.0
+    avg_messages_per_week: float = 0.0
+    avg_messages_per_month: float = 0.0
+
+    # Averages (cost)
+    avg_cost_per_day: float = 0.0
+    avg_cost_per_week: float = 0.0
+    avg_cost_per_month: float = 0.0
+
+    # Code activity (from Edit/Write tools)
+    total_edits: int = 0
+    total_writes: int = 0
+    avg_edits_per_day: float = 0.0
+    avg_edits_per_week: float = 0.0
 
     # Cost tracking (per model)
     model_token_usage: dict[str, dict[str, int]] = field(default_factory=dict)
     estimated_cost: float | None = None
     cost_by_model: dict[str, float] = field(default_factory=dict)
+
+    # Monthly breakdown for cost table
+    monthly_costs: dict[str, float] = field(default_factory=dict)  # "YYYY-MM" -> cost
+    monthly_tokens: dict[str, dict[str, int]] = field(default_factory=dict)  # "YYYY-MM" -> {input, output, ...}
+
+    # Longest conversation tracking
+    longest_conversation_messages: int = 0
+    longest_conversation_tokens: int = 0
+    longest_conversation_session: str | None = None
+    longest_conversation_date: datetime | None = None
 
     @property
     def total_tokens(self) -> int:
@@ -163,6 +188,19 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
     projects = Counter()
     daily = defaultdict(lambda: DailyStats(date=datetime.now()))
 
+    # Track monthly token usage for cost breakdown
+    monthly_tokens: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"input": 0, "output": 0, "cache_create": 0, "cache_read": 0}
+    )
+    monthly_model_tokens: dict[str, dict[str, dict[str, int]]] = defaultdict(
+        lambda: defaultdict(lambda: {"input": 0, "output": 0, "cache_create": 0, "cache_read": 0})
+    )
+
+    # Track per-session message counts for longest conversation
+    session_messages: dict[str, int] = Counter()
+    session_tokens: dict[str, int] = Counter()
+    session_first_time: dict[str, datetime] = {}
+
     # Process each message
     for msg in messages:
         stats.total_messages += 1
@@ -175,6 +213,10 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
         # Session tracking
         if msg.session_id:
             sessions.add(msg.session_id)
+            session_messages[msg.session_id] += 1
+            # Track first timestamp for each session
+            if msg.session_id not in session_first_time and msg.timestamp:
+                session_first_time[msg.session_id] = msg.timestamp
 
         # Project tracking
         project_name = extract_project_name(msg.project)
@@ -217,6 +259,25 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
                 stats.model_token_usage[raw_model]["output"] += msg.usage.output_tokens
                 stats.model_token_usage[raw_model]["cache_create"] += msg.usage.cache_creation_tokens
                 stats.model_token_usage[raw_model]["cache_read"] += msg.usage.cache_read_tokens
+
+            # Track monthly token usage for cost breakdown
+            if msg.timestamp:
+                month_key = msg.timestamp.strftime("%Y-%m")
+                monthly_tokens[month_key]["input"] += msg.usage.input_tokens
+                monthly_tokens[month_key]["output"] += msg.usage.output_tokens
+                monthly_tokens[month_key]["cache_create"] += msg.usage.cache_creation_tokens
+                monthly_tokens[month_key]["cache_read"] += msg.usage.cache_read_tokens
+
+                # Also track per-model per-month for accurate cost calculation
+                if raw_model and raw_model != '<synthetic>':
+                    monthly_model_tokens[month_key][raw_model]["input"] += msg.usage.input_tokens
+                    monthly_model_tokens[month_key][raw_model]["output"] += msg.usage.output_tokens
+                    monthly_model_tokens[month_key][raw_model]["cache_create"] += msg.usage.cache_creation_tokens
+                    monthly_model_tokens[month_key][raw_model]["cache_read"] += msg.usage.cache_read_tokens
+
+            # Track per-session tokens for longest conversation
+            if msg.session_id:
+                session_tokens[msg.session_id] += msg.usage.total_tokens
 
         # Tool usage
         for tool in msg.tool_calls:
@@ -280,19 +341,61 @@ def aggregate_stats(messages: list[Message], year: int) -> WrappedStats:
     # Streaks
     stats.streak_longest, stats.streak_current = calculate_streaks(daily, year)
 
-    # Averages
-    if stats.active_days > 0:
-        stats.avg_messages_per_day = stats.total_messages / stats.active_days
-
-    if stats.total_assistant_messages > 0:
-        stats.avg_tokens_per_message = stats.total_tokens / stats.total_assistant_messages
-
-    # Calculate estimated cost
+    # Calculate estimated cost first (needed for averages)
     from .pricing import calculate_total_cost_by_model
     if stats.model_token_usage:
         stats.estimated_cost, stats.cost_by_model = calculate_total_cost_by_model(
             stats.model_token_usage
         )
+
+    # Calculate monthly costs
+    stats.monthly_tokens = dict(monthly_tokens)
+    for month_key, model_usage in monthly_model_tokens.items():
+        month_cost, _ = calculate_total_cost_by_model(dict(model_usage))
+        stats.monthly_costs[month_key] = month_cost
+
+    # Find longest conversation
+    if session_messages:
+        longest_session = max(session_messages.items(), key=lambda x: x[1])
+        stats.longest_conversation_session = longest_session[0]
+        stats.longest_conversation_messages = longest_session[1]
+        if longest_session[0] in session_tokens:
+            stats.longest_conversation_tokens = session_tokens[longest_session[0]]
+        if longest_session[0] in session_first_time:
+            stats.longest_conversation_date = session_first_time[longest_session[0]]
+
+    # Calculate time periods for averages
+    today = datetime.now()
+    if year == today.year:
+        total_days = (today - datetime(year, 1, 1)).days + 1
+    else:
+        total_days = 366 if year % 4 == 0 else 365
+    total_weeks = max(1, total_days / 7)
+    total_months = max(1, total_days / 30.44)  # Average days per month
+
+    # Message averages (over total time period, not just active days)
+    if total_days > 0:
+        stats.avg_messages_per_day = stats.total_messages / total_days
+    stats.avg_messages_per_week = stats.total_messages / total_weeks
+    stats.avg_messages_per_month = stats.total_messages / total_months
+
+    # Cost averages
+    if stats.estimated_cost is not None and total_days > 0:
+        stats.avg_cost_per_day = stats.estimated_cost / total_days
+        stats.avg_cost_per_week = stats.estimated_cost / total_weeks
+        stats.avg_cost_per_month = stats.estimated_cost / total_months
+
+    # Token averages
+    if stats.total_assistant_messages > 0:
+        stats.avg_tokens_per_message = stats.total_tokens / stats.total_assistant_messages
+
+    # Code activity from Edit/Write tools
+    stats.total_edits = stats.tool_calls.get("Edit", 0)
+    stats.total_writes = stats.tool_calls.get("Write", 0)
+    total_code_changes = stats.total_edits + stats.total_writes
+    if total_days > 0:
+        stats.avg_edits_per_day = total_code_changes / total_days
+        stats.avg_edits_per_week = total_code_changes / total_weeks
 
     return stats
 

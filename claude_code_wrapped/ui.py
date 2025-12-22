@@ -357,6 +357,70 @@ def simplify_model_name(model: str) -> str:
     return model
 
 
+def create_monthly_cost_table(stats: WrappedStats) -> Panel:
+    """Create a monthly cost breakdown table like ccusage."""
+    from .pricing import format_cost
+
+    table = Table(
+        show_header=True,
+        header_style=Style(color=COLORS["white"], bold=True),
+        border_style=Style(color=COLORS["dark"]),
+        box=None,
+        padding=(0, 1),
+    )
+
+    table.add_column("Month", style=Style(color=COLORS["gray"]))
+    table.add_column("Input", justify="right", style=Style(color=COLORS["blue"]))
+    table.add_column("Output", justify="right", style=Style(color=COLORS["orange"]))
+    table.add_column("Cache", justify="right", style=Style(color=COLORS["purple"]))
+    table.add_column("Cost", justify="right", style=Style(color=COLORS["green"], bold=True))
+
+    # Sort months chronologically
+    sorted_months = sorted(stats.monthly_costs.keys())
+
+    for month_key in sorted_months:
+        cost = stats.monthly_costs.get(month_key, 0)
+        tokens = stats.monthly_tokens.get(month_key, {})
+
+        # Format month name
+        try:
+            month_date = datetime.strptime(month_key, "%Y-%m")
+            month_name = month_date.strftime("%b %Y")
+        except ValueError:
+            month_name = month_key
+
+        input_tokens = tokens.get("input", 0)
+        output_tokens = tokens.get("output", 0)
+        cache_tokens = tokens.get("cache_create", 0) + tokens.get("cache_read", 0)
+
+        table.add_row(
+            month_name,
+            format_tokens(input_tokens),
+            format_tokens(output_tokens),
+            format_tokens(cache_tokens),
+            format_cost(cost),
+        )
+
+    # Add total row
+    if sorted_months:
+        table.add_row("", "", "", "", "")  # Separator
+        table.add_row(
+            "Total",
+            format_tokens(stats.total_input_tokens),
+            format_tokens(stats.total_output_tokens),
+            format_tokens(stats.total_cache_creation_tokens + stats.total_cache_read_tokens),
+            format_cost(stats.estimated_cost) if stats.estimated_cost else "N/A",
+            style=Style(bold=True),
+        )
+
+    return Panel(
+        table,
+        title="Monthly Cost Breakdown",
+        border_style=Style(color=COLORS["green"]),
+        padding=(0, 1),
+    )
+
+
 def create_credits_roll(stats: WrappedStats) -> list[Text]:
     """Create end credits content."""
     from .pricing import format_cost
@@ -413,7 +477,59 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     timeline.append("    [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(timeline)
 
-    # Frame 3: Cast (models)
+    # Frame 3: Averages
+    from .pricing import format_cost
+    averages = Text()
+    averages.append("\n\n\n")
+    averages.append("              A V E R A G E S\n\n", style=Style(color=COLORS["blue"], bold=True))
+    averages.append("              Messages\n", style=Style(color=COLORS["white"], bold=True))
+    averages.append(f"                Per day:   {stats.avg_messages_per_day:.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"                Per week:  {stats.avg_messages_per_week:.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"                Per month: {stats.avg_messages_per_month:.1f}\n", style=Style(color=COLORS["gray"]))
+    if stats.estimated_cost is not None:
+        averages.append("\n              Cost\n", style=Style(color=COLORS["white"], bold=True))
+        averages.append(f"                Per day:   {format_cost(stats.avg_cost_per_day)}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"                Per week:  {format_cost(stats.avg_cost_per_week)}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"                Per month: {format_cost(stats.avg_cost_per_month)}\n", style=Style(color=COLORS["gray"]))
+    averages.append("\n\n")
+    averages.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+    frames.append(averages)
+
+    # Frame 4: Code Activity
+    code_activity = Text()
+    code_activity.append("\n\n\n")
+    code_activity.append("              C O D E   A C T I V I T Y\n\n", style=Style(color=COLORS["orange"], bold=True))
+    total_code_changes = stats.total_edits + stats.total_writes
+    code_activity.append("              File Changes\n", style=Style(color=COLORS["white"], bold=True))
+    code_activity.append(f"                Edits:  {stats.total_edits:,}\n", style=Style(color=COLORS["gray"]))
+    code_activity.append(f"                Writes: {stats.total_writes:,}\n", style=Style(color=COLORS["gray"]))
+    code_activity.append(f"                Total:  {total_code_changes:,}\n", style=Style(color=COLORS["orange"], bold=True))
+    code_activity.append("\n              Averages\n", style=Style(color=COLORS["white"], bold=True))
+    code_activity.append(f"                Per day:  {stats.avg_edits_per_day:.1f}\n", style=Style(color=COLORS["gray"]))
+    code_activity.append(f"                Per week: {stats.avg_edits_per_week:.1f}\n", style=Style(color=COLORS["gray"]))
+    code_activity.append("\n\n")
+    code_activity.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+    frames.append(code_activity)
+
+    # Frame 5: Longest Conversation
+    if stats.longest_conversation_messages > 0:
+        longest = Text()
+        longest.append("\n\n\n")
+        longest.append("              L O N G E S T   C O N V E R S A T I O N\n\n", style=Style(color=COLORS["purple"], bold=True))
+        longest.append(f"              Messages  ", style=Style(color=COLORS["white"], bold=True))
+        longest.append(f"{stats.longest_conversation_messages:,}\n", style=Style(color=COLORS["purple"], bold=True))
+        if stats.longest_conversation_tokens > 0:
+            longest.append(f"              Tokens    ", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"{format_tokens(stats.longest_conversation_tokens)}\n", style=Style(color=COLORS["orange"], bold=True))
+        if stats.longest_conversation_date:
+            longest.append(f"              Date      ", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"{stats.longest_conversation_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
+        longest.append("\n              That's one epic coding session!\n", style=Style(color=COLORS["gray"]))
+        longest.append("\n\n")
+        longest.append("    [ENTER]", style=Style(color=COLORS["dark"]))
+        frames.append(longest)
+
+    # Frame 6: Cast (models)
     cast = Text()
     cast.append("\n\n\n")
     cast.append("              S T A R R I N G\n\n", style=Style(color=COLORS["purple"], bold=True))
@@ -424,7 +540,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     cast.append("    [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(cast)
 
-    # Frame 4: Projects
+    # Frame 6: Projects
     if stats.top_projects:
         projects = Text()
         projects.append("\n\n\n")
@@ -558,6 +674,10 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
         create_top_list(stats.top_projects, "Top Projects", COLORS["green"]),
     )
     console.print(lists)
+
+    # Monthly cost table
+    if stats.monthly_costs:
+        console.print(create_monthly_cost_table(stats))
 
     # Insights
     insights = Text()
