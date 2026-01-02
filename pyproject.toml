@@ -6,9 +6,10 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [
-    { name = "Mert Deveci" }
+    { name = "Mert Deveci", email = "mert@banker.so" },
+    { name = "Daniel Tollefsen" }
 ]
-keywords = ["claude", "anthropic", "cli", "wrapped", "stats", "terminal"]
+keywords = ["claude", "anthropic", "cli", "wrapped", "stats", "terminal", "analytics", "export"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -25,8 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/The-Money-Company-Limited/claudecodewrapped"
-Repository = "https://github.com/The-Money-Company-Limited/claudecodewrapped"
+Homepage = "https://github.com/da-troll/claude-code-wrapped"
+Repository = "https://github.com/da-troll/claude-code-wrapped"
+Issues = "https://github.com/da-troll/claude-code-wrapped/issues"
 
 [project.scripts]
 claude-code-wrapped = "claude_code_wrapped.main:main"

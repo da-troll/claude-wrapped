@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/The-Money-Company-Limited/claudecodewrapped.git"
+    "url": "git+https://github.com/da-troll/claude-code-wrapped.git"
   },
   "keywords": [
     "claude",
@@ -19,14 +19,16 @@
     "wrapped",
     "stats",
     "terminal",
-    "claude-code"
+    "claude-code",
+    "analytics",
+    "export"
   ],
-  "author": "Mert Deveci",
+  "author": "Mert Deveci (original), Daniel Tollefsen (fork maintainer)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/The-Money-Company-Limited/claudecodewrapped/issues"
+    "url": "https://github.com/da-troll/claude-code-wrapped/issues"
   },
-  "homepage": "https://github.com/The-Money-Company-Limited/claudecodewrapped#readme",
+  "homepage": "https://github.com/da-troll/claude-code-wrapped#readme",
   "engines": {
     "node": ">=16.0.0"
   }
