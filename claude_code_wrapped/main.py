@@ -11,58 +11,80 @@ from .reader import get_claude_dir, load_all_messages
 from .stats import aggregate_stats
 from .ui import render_wrapped
 from .exporters import export_to_html, export_to_markdown
+from .interactive import interactive_mode, should_use_interactive_mode
 
 
 def main():
     """Main entry point for Claude Code Wrapped."""
-    parser = argparse.ArgumentParser(
-        description="Claude Code Wrapped - Your year with Claude Code",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+    # Check if we should use interactive mode
+    if should_use_interactive_mode():
+        # Get user selections through interactive prompts
+        selections = interactive_mode()
+
+        # Create args namespace from interactive selections
+        args = argparse.Namespace(
+            year=selections['year'],
+            no_animate=selections['no_animate'],
+            json=selections['json'],
+            html=selections['html'],
+            markdown=selections['markdown'],
+            output=selections['output'],
+        )
+    else:
+        # Use traditional CLI argument parsing
+        parser = argparse.ArgumentParser(
+            description="Claude Code Wrapped - Your year with Claude Code",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
 Examples:
-  claude-code-wrapped                Show your wrapped for current year
+  claude-code-wrapped                Interactive mode (prompts for all options)
   claude-code-wrapped 2025           Show your 2025 wrapped
   claude-code-wrapped all            Show your all-time wrapped
   claude-code-wrapped --no-animate   Skip animations
   claude-code-wrapped --html         Export to HTML file
   claude-code-wrapped --markdown     Export to Markdown file
   claude-code-wrapped all --html --markdown  Export all-time stats to both formats
-        """,
-    )
-    parser.add_argument(
-        "year",
-        type=str,
-        nargs="?",
-        default=str(datetime.now().year),
-        help="Year to analyze or 'all' for all-time stats (default: current year)",
-    )
-    parser.add_argument(
-        "--no-animate",
-        action="store_true",
-        help="Disable animations for faster display",
-    )
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Output raw stats as JSON",
-    )
-    parser.add_argument(
-        "--html",
-        action="store_true",
-        help="Export to HTML file",
-    )
-    parser.add_argument(
-        "--markdown",
-        action="store_true",
-        help="Export to Markdown file",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        help="Custom output filename (without extension)",
-    )
+            """,
+        )
+        parser.add_argument(
+            "year",
+            type=str,
+            nargs="?",
+            default=str(datetime.now().year),
+            help="Year to analyze or 'all' for all-time stats (default: current year)",
+        )
+        parser.add_argument(
+            "--no-animate",
+            action="store_true",
+            help="Disable animations for faster display",
+        )
+        parser.add_argument(
+            "--json",
+            action="store_true",
+            help="Output raw stats as JSON",
+        )
+        parser.add_argument(
+            "--html",
+            action="store_true",
+            help="Export to HTML file",
+        )
+        parser.add_argument(
+            "--markdown",
+            action="store_true",
+            help="Export to Markdown file",
+        )
+        parser.add_argument(
+            "--output",
+            type=str,
+            help="Custom output filename (without extension)",
+        )
+        parser.add_argument(
+            "-i", "--interactive",
+            action="store_true",
+            help="Launch interactive mode (default when no arguments provided)",
+        )
 
-    args = parser.parse_args()
+        args = parser.parse_args()
     console = Console()
 
     # Parse year argument

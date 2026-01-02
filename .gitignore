@@ -36,4 +36,3 @@ htmlcov/
 # Local development
 *.log
 .conductor/
-CLAUDE.md

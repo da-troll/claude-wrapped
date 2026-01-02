@@ -20,19 +20,21 @@ A beautiful terminal experience that analyzes your local Claude Code conversatio
 
 ## 🚀 Quick Start
 
+**No installation needed** - Just run one of these commands:
+
 ```bash
-# Using uvx (recommended - no install needed)
-uvx claude-code-wrapped
+# Using uvx (recommended - Python, no install)
+uvx claude-wrapped
 
-# Using npx (Node.js)
-npx claude-code-wrapped
+# Using npx (Node.js, no install)
+npx claude-wrapped
 
-# Or install globally
-pip install claude-code-wrapped
-claude-code-wrapped
+# Or install once and run anytime
+pip install claude-wrapped
+claude-wrapped
 ```
 
-Press `Enter` to advance through your personalized stats!
+The tool launches in **interactive mode** with arrow-key prompts to guide you through all options. Press `Enter` to advance through your personalized stats!
 
 ---
 
@@ -73,43 +75,60 @@ Based on your coding habits, discover your type:
 
 ## 🎯 Usage
 
-### Basic Commands
+### Two Ways to Use
+
+**🎨 Interactive Mode (Recommended for beginners)**
+
+Simply run the command without any arguments:
 
 ```bash
-# Full cinematic experience (default)
-claude-code-wrapped
+claude-wrapped
+```
+
+You'll be guided through beautiful prompts to select:
+- ⏳ **Time period** - Current year, specific year, or all-time
+- 📤 **Export format** - Terminal only, HTML, Markdown, or JSON
+- 🎬 **Animations** - Show dramatic reveals or skip to dashboard
+- 📝 **Custom filename** - Optional custom name for exports
+
+No need to remember complex command-line arguments!
+
+**⚡ CLI Mode (For power users & scripts)**
+
+Pass arguments directly for quick access:
+
+```bash
+# Full cinematic experience (current year)
+claude-wrapped 2025
 
 # Skip animations, go straight to dashboard
-claude-code-wrapped --no-animate
-
-# View a specific year
-claude-code-wrapped 2025
+claude-wrapped --no-animate
 
 # All-time statistics
-claude-code-wrapped all
+claude-wrapped all
 
 # Export to HTML
-claude-code-wrapped --html
+claude-wrapped --html
 
 # Export to Markdown
-claude-code-wrapped --markdown
+claude-wrapped --markdown
 
 # All-time stats with exports
-claude-code-wrapped all --html --markdown
+claude-wrapped all --html --markdown
 
 # Export raw data as JSON
-claude-code-wrapped --json
+claude-wrapped --json
 ```
 
 ### Custom Output Filename
 
 ```bash
 # Custom filename (without extension)
-claude-code-wrapped --html --output my-wrapped-2025
+claude-wrapped --html --output my-wrapped-2025
 # Creates: my-wrapped-2025.html
 
 # Default timestamped filenames
-claude-code-wrapped --html
+claude-wrapped --html
 # Creates: claude-wrapped-2025-20260102-1430.html
 ```
 
@@ -263,28 +282,67 @@ test, tests, public, static, dist, build, etc.
 
 ## 📦 Installation Methods
 
-### uvx (Recommended)
-```bash
-uvx claude-code-wrapped
-```
-No installation needed, always uses latest version.
+### 🚀 No Install Required (Recommended)
 
-### npx (Node.js)
+**uvx** (Python ecosystem - most reliable):
 ```bash
-npx claude-code-wrapped
+uvx claude-wrapped
 ```
-Works if you have Node.js installed.
+- ✅ No installation needed
+- ✅ Always runs latest version
+- ✅ Isolated environment
+- ✅ Requires Python 3.12+ or `uv` installed
 
-### pip (Global Install)
+**npx** (Node.js ecosystem):
 ```bash
-pip install claude-code-wrapped
-claude-code-wrapped
+npx claude-wrapped
+```
+- ✅ No installation needed
+- ✅ Works if you have Node.js 16+
+- ⚠️ Wrapper script that calls Python version
+
+### 📥 Install Globally
+
+**pip** (system-wide Python install):
+```bash
+pip install claude-wrapped
+claude-wrapped
+```
+- Installs `claude-wrapped` command globally
+- Requires Python 3.12+
+
+**pipx** (isolated Python install):
+```bash
+pipx install claude-wrapped
+claude-wrapped
+```
+- ✅ Best of both worlds: installed command + isolated environment
+- ✅ Doesn't pollute global Python packages
+- Requires `pipx` ([installation guide](https://pipx.pypa.io/stable/installation/))
+
+**Homebrew** (macOS/Linux package manager):
+```bash
+brew tap da-troll/claude-wrapped
+brew install claude-wrapped
+```
+- ✅ Native macOS/Linux package manager
+- ✅ Easy updates with `brew upgrade`
+- Tap repository: [homebrew-claude-wrapped](https://github.com/da-troll/homebrew-claude-wrapped)
+
+### 🔧 Development Mode
+
+**From source** (for contributors):
+```bash
+git clone https://github.com/da-troll/claude-code-wrapped.git
+cd claude-code-wrapped
+uv sync
+uv run python -m claude_code_wrapped
 ```
 
-### pipx (Isolated Install)
+**Editable install** (makes `claude-wrapped` command available locally):
 ```bash
-pipx install claude-code-wrapped
-claude-code-wrapped
+uv pip install -e .
+claude-wrapped
 ```
 
 ---
