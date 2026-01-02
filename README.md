@@ -27,7 +27,7 @@ A beautiful terminal experience that analyzes your local Claude Code conversatio
 uvx claude-wrapped
 
 # Using npx (Node.js, no install)
-npx claude-wrapped
+npx @da-trollefsen/claude-wrapped
 
 # Or install once and run anytime
 pip install claude-wrapped
