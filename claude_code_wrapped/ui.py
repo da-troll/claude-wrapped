@@ -71,11 +71,11 @@ def create_title_slide(year: int | None) -> Text:
     title.append("\n")
     title.append("              C O D E   W R A P P E D\n", style=Style(color=COLORS["white"], bold=True))
     year_display = format_year_display(year)
-    title.append(f"                  {year_display}\n\n", style=Style(color=COLORS["purple"], bold=True))
-    title.append("                  by ", style=Style(color=COLORS["gray"]))
-    title.append("Banker.so", style=Style(color=COLORS["blue"], bold=True, link="https://banker.so"))
+    title.append(f"                    {year_display}\n\n", style=Style(color=COLORS["purple"], bold=True))
+    title.append("                   by ", style=Style(color=COLORS["gray"]))
+    title.append("Trollefsen", style=Style(color=COLORS["blue"], bold=True, link="https://github.com/da-troll"))
     title.append("\n\n\n")
-    title.append("            press [ENTER] to begin", style=Style(color=COLORS["dark"]))
+    title.append("               press [ENTER] to begin", style=Style(color=COLORS["dark"]))
     title.append("\n\n")
     return title
 
@@ -562,7 +562,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
 def render_wrapped(stats: WrappedStats, console: Console | None = None, animate: bool = True):
     """Render the complete wrapped experience."""
     if console is None:
-        console = Console()
+        console = Console(style=Style(bgcolor="#2c2c2c"))
 
     # === CINEMATIC MODE ===
     if animate:
