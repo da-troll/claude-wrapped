@@ -766,7 +766,7 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
     footer.append("Maintained by ", style=Style(color=COLORS["gray"]))
     footer.append("Daniel Tollefsen", style=Style(color=COLORS["white"], bold=True, link="https://github.com/da-troll"))
     footer.append(" · ", style=Style(color=COLORS["dark"]))
-    footer.append("github.com/da-troll/claude-code-wrapped", style=Style(color=COLORS["blue"], link="https://github.com/da-troll/claude-code-wrapped"))
+    footer.append("github.com/da-troll/claude-wrapped", style=Style(color=COLORS["blue"], link="https://github.com/da-troll/claude-wrapped"))
     footer.append("\n", style=Style(color=COLORS["gray"]))
     footer.append("Original by ", style=Style(color=COLORS["gray"]))
     footer.append("Mert Deveci", style=Style(color=COLORS["white"], bold=True, link="https://x.com/gm_mertd"))

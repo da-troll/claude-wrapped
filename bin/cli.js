@@ -21,12 +21,12 @@ function pythonModuleExists() {
 function findExecutor() {
   // Try uvx first (recommended)
   if (commandExists('uvx')) {
-    return { cmd: 'uvx', args: ['claude-code-wrapped', ...args] };
+    return { cmd: 'uvx', args: ['claude-wrapped', ...args] };
   }
 
   // Try pipx
   if (commandExists('pipx')) {
-    return { cmd: 'pipx', args: ['run', 'claude-code-wrapped', ...args] };
+    return { cmd: 'pipx', args: ['run', 'claude-wrapped', ...args] };
   }
 
   // Try direct python module
@@ -35,14 +35,14 @@ function findExecutor() {
   }
 
   // No executor found
-  console.error('claude-code-wrapped requires Python 3.12+ and one of: uvx, pipx, or pip');
+  console.error('claude-wrapped requires Python 3.12+ and one of: uvx, pipx, or pip');
   console.error('');
   console.error('Recommended: Install uv (https://docs.astral.sh/uv/) then run:');
-  console.error('  uvx claude-code-wrapped');
+  console.error('  uvx claude-wrapped');
   console.error('');
   console.error('Or install with pip:');
-  console.error('  pip install claude-code-wrapped');
-  console.error('  claude-code-wrapped');
+  console.error('  pip install claude-wrapped');
+  console.error('  claude-wrapped');
   process.exit(1);
 }
 

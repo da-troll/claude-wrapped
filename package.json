@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/da-troll/claude-code-wrapped.git"
+    "url": "git+https://github.com/da-troll/claude-wrapped.git"
   },
   "keywords": [
     "claude",
@@ -30,9 +30,9 @@
   "author": "Mert Deveci (original), Daniel Tollefsen (fork maintainer)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/da-troll/claude-code-wrapped/issues"
+    "url": "https://github.com/da-troll/claude-wrapped/issues"
   },
-  "homepage": "https://github.com/da-troll/claude-code-wrapped#readme",
+  "homepage": "https://github.com/da-troll/claude-wrapped#readme",
   "engines": {
     "node": ">=16.0.0"
   }

@@ -37,13 +37,13 @@ def main():
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
 Examples:
-  claude-code-wrapped                Interactive mode (prompts for all options)
-  claude-code-wrapped 2025           Show your 2025 wrapped
-  claude-code-wrapped all            Show your all-time wrapped
-  claude-code-wrapped --no-animate   Skip animations
-  claude-code-wrapped --html         Export to HTML file
-  claude-code-wrapped --markdown     Export to Markdown file
-  claude-code-wrapped all --html --markdown  Export all-time stats to both formats
+  claude-wrapped                Interactive mode (prompts for all options)
+  claude-wrapped 2025           Show your 2025 wrapped
+  claude-wrapped all            Show your all-time wrapped
+  claude-wrapped --no-animate   Skip animations
+  claude-wrapped --html         Export to HTML file
+  claude-wrapped --markdown     Export to Markdown file
+  claude-wrapped all --html --markdown  Export all-time stats to both formats
             """,
         )
         parser.add_argument(

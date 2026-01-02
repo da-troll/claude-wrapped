@@ -1019,8 +1019,8 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
                     Daniel Tollefsen
                 </a>
                 <span style="color: var(--gray);"> · </span>
-                <a href="https://github.com/da-troll/claude-code-wrapped" style="color: var(--blue); text-decoration: none;">
-                    github.com/da-troll/claude-code-wrapped
+                <a href="https://github.com/da-troll/claude-wrapped" style="color: var(--blue); text-decoration: none;">
+                    github.com/da-troll/claude-wrapped
                 </a>
             </div>
             <div>

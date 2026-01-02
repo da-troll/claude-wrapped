@@ -36,7 +36,7 @@ claude-wrapped
 
 The tool launches in **interactive mode** with arrow-key prompts to guide you through all options. Press `Enter` to advance through your personalized stats!
 
-> **☕ Pro tip:** Using Claude Code? Just paste this repo URL (`https://github.com/da-troll/claude-code-wrapped`) into your conversation and ask Claude to install and run it for you. Sit back, sip your coffee, and let Claude handle the setup while you wait for your stats. Meta, right? 😎
+> **☕ Pro tip:** Using Claude Code? Just paste this repo URL (`https://github.com/da-troll/claude-wrapped`) into your conversation and ask Claude to install and run it for you. Sit back, sip your coffee, and let Claude handle the setup while you wait for your stats. Meta, right? 😎
 
 ---
 
@@ -335,8 +335,8 @@ brew install claude-wrapped
 
 **From source** (for contributors):
 ```bash
-git clone https://github.com/da-troll/claude-code-wrapped.git
-cd claude-code-wrapped
+git clone https://github.com/da-troll/claude-wrapped.git
+cd claude-wrapped
 uv sync
 uv run python -m claude_code_wrapped
 ```
@@ -357,8 +357,8 @@ Contributions are welcome! This project is open source and community-driven.
 
 ```bash
 # Clone the repository
-git clone https://github.com/da-troll/claude-code-wrapped.git
-cd claude-code-wrapped
+git clone https://github.com/da-troll/claude-wrapped.git
+cd claude-wrapped
 
 # Install dependencies with uv
 uv sync

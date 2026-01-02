@@ -152,7 +152,7 @@ def should_use_interactive_mode() -> bool:
     """Determine if we should use interactive mode.
 
     Interactive mode is used when:
-    - No arguments provided at all (just `claude-code-wrapped`)
+    - No arguments provided at all (just `claude-wrapped`)
     - Only the --interactive flag is provided
     """
     # Check if only the script name is in argv (no arguments)

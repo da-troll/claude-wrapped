@@ -450,7 +450,7 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
 
 ## 👋 See you in {year + 1}
 
-**Maintained by** [Daniel Tollefsen](https://github.com/da-troll) · [github.com/da-troll/claude-code-wrapped](https://github.com/da-troll/claude-code-wrapped)
+**Maintained by** [Daniel Tollefsen](https://github.com/da-troll) · [github.com/da-troll/claude-wrapped](https://github.com/da-troll/claude-wrapped)
 
 **Original by** [Mert Deveci](https://x.com/gm_mertd) · [Banker.so](https://banker.so)"""
     else:
@@ -458,7 +458,7 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
 
 ## 👋 Keep coding!
 
-**Maintained by** [Daniel Tollefsen](https://github.com/da-troll) · [github.com/da-troll/claude-code-wrapped](https://github.com/da-troll/claude-code-wrapped)
+**Maintained by** [Daniel Tollefsen](https://github.com/da-troll) · [github.com/da-troll/claude-wrapped](https://github.com/da-troll/claude-wrapped)
 
 **Original by** [Mert Deveci](https://x.com/gm_mertd) · [Banker.so](https://banker.so)"""
     sections.append(final)
