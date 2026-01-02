@@ -1013,24 +1013,14 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
             {farewell_text}
         </div>
         <div style="margin-top: 40px;">
-            <div style="margin-bottom: 10px;">
-                <span style="color: var(--gray);">Maintained by </span>
+            <div>
+                <span style="color: var(--gray);">Created by </span>
                 <a href="https://github.com/da-troll" style="color: var(--white); text-decoration: none; font-weight: bold;">
                     Daniel Tollefsen
                 </a>
                 <span style="color: var(--gray);"> · </span>
                 <a href="https://github.com/da-troll/claude-wrapped" style="color: var(--blue); text-decoration: none;">
                     github.com/da-troll/claude-wrapped
-                </a>
-            </div>
-            <div>
-                <span style="color: var(--gray);">Original by </span>
-                <a href="https://x.com/gm_mertd" style="color: var(--white); text-decoration: none; font-weight: bold;">
-                    Mert Deveci
-                </a>
-                <span style="color: var(--gray);"> · </span>
-                <a href="https://banker.so" style="color: var(--blue); text-decoration: none; font-weight: bold;">
-                    Banker.so
                 </a>
             </div>
         </div>

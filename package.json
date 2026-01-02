@@ -27,7 +27,7 @@
     "2026",
     "2027"
   ],
-  "author": "Mert Deveci (original), Daniel Tollefsen (fork maintainer)",
+  "author": "Daniel Tollefsen",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/da-troll/claude-wrapped/issues"

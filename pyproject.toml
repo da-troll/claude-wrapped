@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [
-    { name = "Mert Deveci", email = "mert@banker.so" },
     { name = "Daniel Tollefsen" }
 ]
 keywords = ["claude", "anthropic", "cli", "wrapped", "stats", "terminal", "analytics", "export", "claude-code", "2025", "2026", "2027"]

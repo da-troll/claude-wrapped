@@ -373,22 +373,6 @@ uv run python -m claude_code_wrapped.stats
 
 ---
 
-## 👏 Credits
-
-**Fork Maintainer:** [Daniel Tollefsen](https://github.com/da-troll)
-
-**Original Creator:** [Mert Deveci](https://x.com/gm_mertd) - Maker of [Banker.so](https://banker.so)
-
-### Recent Enhancements
-- All-time statistics support
-- HTML and Markdown export functionality
-- Streak date tracking
-- Improved project name aggregation
-- Custom backup directory support
-- Intelligent deduplication across multiple sources
-
----
-
 ## 📄 License
 
 MIT - see [LICENSE](LICENSE) for details.
@@ -405,3 +389,9 @@ If you found this useful, consider:
 ---
 
 **Built with ❤️ for the Claude Code community**
+
+---
+
+## 💡 Inspired By
+
+Originally inspired by [Mert Deveci](https://x.com/gm_mertd)'s concept. This project has since evolved into a completely independent codebase with a different architecture and feature set.
