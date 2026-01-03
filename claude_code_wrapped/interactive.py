@@ -10,12 +10,12 @@ from rich.console import Console
 
 # Custom styling to match the wrapped aesthetic
 custom_style = Style([
-    ('qmark', 'fg:#C96442 bold'),       # Coral question mark
+    ('qmark', 'fg:#E67E22 bold'),       # Orange question mark
     ('question', 'bold'),                # Question text
-    ('answer', 'fg:#C96442 bold'),      # Coral answer
-    ('pointer', 'fg:#C96442 bold'),     # Coral pointer
-    ('highlighted', 'fg:#C96442 bold'), # Coral highlighted choice
-    ('selected', ''),                    # No special style for selected (removes purple)
+    ('answer', 'fg:#9B59B6 bold'),      # Purple answer
+    ('pointer', 'fg:#E67E22 bold'),     # Orange pointer
+    ('highlighted', 'fg:#E67E22 bold'), # Orange highlighted choice
+    ('selected', 'fg:#9B59B6'),         # Purple selected (no background)
     ('separator', 'fg:#7F8C8D'),        # Gray separator
     ('instruction', 'fg:#7F8C8D'),      # Gray instructions
 ])
@@ -80,7 +80,8 @@ def interactive_mode() -> dict:
                 "Export to JSON only",
             ],
             style=custom_style,
-            default="View in terminal only",
+            use_shortcuts=True,
+            use_arrow_keys=True,
         ).ask()
 
         if export_answer is None:
