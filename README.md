@@ -9,7 +9,7 @@
   ░╚════╝░╚══════╝╚═╝░░╚═╝░╚═════╝░╚═════╝░╚══════╝
 
             C O D E   W R A P P E D
-                    by Banker.so
+                   by Trollefsen
 ```
 
 **Your year with Claude Code, Spotify Wrapped style.** ✨

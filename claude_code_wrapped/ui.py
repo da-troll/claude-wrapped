@@ -551,7 +551,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         final.append("              Keep coding!", style=Style(color=COLORS["orange"], bold=True))
     final.append("\n\n\n\n", style=Style(color=COLORS["gray"]))
     final.append("              ", style=Style())
-    final.append("Banker.so", style=Style(color=COLORS["blue"], bold=True, link="https://banker.so"))
+    final.append("Trollefsen", style=Style(color=COLORS["blue"], bold=True, link="https://github.com/da-troll"))
     final.append(" presents\n\n", style=Style(color=COLORS["gray"]))
     final.append("    [ENTER] to exit", style=Style(color=COLORS["dark"]))
     frames.append(final)
