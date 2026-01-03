@@ -321,7 +321,7 @@ def create_fun_facts_slide(facts: list[tuple[str, str]]) -> Text:
         text.append(f"{fact}\n\n", style=Style(color=COLORS["white"]))
 
     text.append("\n")
-    text.append("press [ENTER] for credits", style=Style(color=COLORS["dark"]))
+    text.append("press [ENTER] for the credits", style=Style(color=COLORS["dark"]))
     text.append("\n")
     return text
 
@@ -414,7 +414,8 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     """Create end credits content."""
     from .pricing import format_cost
 
-    frames = []
+    # Build frames with labels for post-processing [ENTER] prompts
+    labeled_frames: list[tuple[Text, str]] = []
 
     # Aggregate costs by simplified model name for display
     display_costs: dict[str, float] = {}
@@ -448,8 +449,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     numbers.append(f"              Input: {' ' * input_padding}{input_str}\n", style=Style(color=COLORS["gray"]))
     numbers.append(f"              Output: {' ' * output_padding}{output_str}\n", style=Style(color=COLORS["gray"]))
     numbers.append("\n\n")
-    numbers.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(numbers)
+    labeled_frames.append((numbers, "numbers"))
 
     # Frame 2: Timeline (full year context)
     timeline = Text()
@@ -483,8 +483,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         timeline.append(f"              Peak hour         ", style=Style(color=COLORS["white"], bold=True))
         timeline.append(f"{hour_12}:00 {hour_label}\n", style=Style(color=COLORS["purple"], bold=True))
     timeline.append("\n\n")
-    timeline.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(timeline)
+    labeled_frames.append((timeline, "timeline"))
 
     # Frame 3: Averages
     from .pricing import format_cost
@@ -501,8 +500,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         averages.append(f"              Per week:  {format_cost(stats.avg_cost_per_week)}\n", style=Style(color=COLORS["gray"]))
         averages.append(f"              Per month: {format_cost(stats.avg_cost_per_month)}\n", style=Style(color=COLORS["gray"]))
     averages.append("\n\n")
-    averages.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(averages)
+    labeled_frames.append((averages, "averages"))
 
     # Frame 4: Longest Streak (if significant)
     if stats.streak_longest >= 3 and stats.streak_longest_start and stats.streak_longest_end:
@@ -519,8 +517,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         if stats.streak_current > 0:
             streak.append(f"\n              Current streak: {stats.streak_current} days\n", style=Style(color=COLORS["gray"]))
         streak.append("\n\n")
-        streak.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-        frames.append(streak)
+        labeled_frames.append((streak, "streak"))
 
     # Frame 5: Longest Conversation
     if stats.longest_conversation_messages > 0:
@@ -537,8 +534,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
             longest.append(f"{stats.longest_conversation_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
         longest.append("\n              That's one epic coding session!\n", style=Style(color=COLORS["gray"]))
         longest.append("\n\n")
-        longest.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-        frames.append(longest)
+        labeled_frames.append((longest, "conversation"))
 
     # Frame 6: Cast (models)
     cast = Text()
@@ -548,8 +544,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         cast.append(f"              Claude {model}", style=Style(color=COLORS["white"], bold=True))
         cast.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
     cast.append("\n\n\n")
-    cast.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-    frames.append(cast)
+    labeled_frames.append((cast, "starring"))
 
     # Frame 7: Projects
     if stats.top_projects:
@@ -560,8 +555,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
             projects.append(f"              {proj}", style=Style(color=COLORS["white"], bold=True))
             projects.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
         projects.append("\n\n\n")
-        projects.append("              [ENTER]", style=Style(color=COLORS["dark"]))
-        frames.append(projects)
+        labeled_frames.append((projects, "projects"))
 
     # Frame 8: Final card
     final = Text()
@@ -573,7 +567,34 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         final.append("       Nothing exploded. That's a win.", style=Style(color=COLORS["orange"], bold=True))
     final.append("\n\n\n\n\n\n", style=Style(color=COLORS["gray"]))
     final.append("              [ENTER] to exit", style=Style(color=COLORS["dark"]))
-    frames.append(final)
+    labeled_frames.append((final, "final"))
+
+    # Map labels to friendly names for [ENTER] prompts
+    label_to_name = {
+        "numbers": "the numbers",
+        "timeline": "the timeline",
+        "averages": "the averages",
+        "streak": "the streak",
+        "conversation": "the longest conversation",
+        "starring": "the starring",
+        "projects": "the projects",
+        "final": None,  # Final frame has its own text
+    }
+
+    # Post-process: add [ENTER] prompts based on next frame
+    frames = []
+    for i, (frame, label) in enumerate(labeled_frames):
+        if label != "final":  # Final frame already has its [ENTER] text
+            if i + 1 < len(labeled_frames):
+                next_label = labeled_frames[i + 1][1]
+                next_name = label_to_name.get(next_label, "continue")
+                if next_name:
+                    frame.append(f"              press [ENTER] for {next_name}", style=Style(color=COLORS["dark"]))
+                else:
+                    frame.append("              press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+            else:
+                frame.append("              press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+        frames.append(frame)
 
     return frames
 
