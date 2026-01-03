@@ -63,7 +63,6 @@ def interactive_mode() -> dict:
         ).ask()
 
         if year_answer is None:  # User pressed Ctrl+C
-            console.print("\n[yellow]Cancelled.[/yellow]")
             sys.exit(0)
 
         # Convert "All time" to "all" for internal use
@@ -85,7 +84,6 @@ def interactive_mode() -> dict:
         ).ask()
 
         if export_answer is None:
-            console.print("\n[yellow]Cancelled.[/yellow]")
             sys.exit(0)
 
         # Parse export selections
@@ -103,7 +101,6 @@ def interactive_mode() -> dict:
             ).ask()
 
             if animate_answer is None:
-                console.print("\n[yellow]Cancelled.[/yellow]")
                 sys.exit(0)
 
             no_animate = not animate_answer
@@ -121,7 +118,6 @@ def interactive_mode() -> dict:
             ).ask()
 
             if use_custom is None:
-                console.print("\n[yellow]Cancelled.[/yellow]")
                 sys.exit(0)
 
             if use_custom:
@@ -132,7 +128,6 @@ def interactive_mode() -> dict:
                 ).ask()
 
                 if output_filename is None:
-                    console.print("\n[yellow]Cancelled.[/yellow]")
                     sys.exit(0)
 
         console.print()  # Add spacing before execution
@@ -147,7 +142,7 @@ def interactive_mode() -> dict:
         }
 
     except KeyboardInterrupt:
-        console.print("\n\n[yellow]Cancelled.[/yellow]")
+        console.print("\n\n[yellow]Cancelled by user.[/yellow]")
         sys.exit(0)
 
 
