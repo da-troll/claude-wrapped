@@ -558,7 +558,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         final.append("              See you in ", style=Style(color=COLORS["gray"]))
         final.append(f"{stats.year + 1}", style=Style(color=COLORS["orange"], bold=True))
     else:
-        final.append("              Keep coding!", style=Style(color=COLORS["orange"], bold=True))
+        final.append("       Nothing exploded. That's a win.", style=Style(color=COLORS["orange"], bold=True))
     final.append("\n\n\n\n\n\n", style=Style(color=COLORS["gray"]))
     final.append("    [ENTER] to exit", style=Style(color=COLORS["dark"]))
     frames.append(final)
