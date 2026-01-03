@@ -99,6 +99,7 @@ def interactive_mode() -> dict:
                 "Show animations?",
                 default=True,
                 style=custom_style,
+                instruction="(y/n)",
             ).ask()
 
             if animate_answer is None:
@@ -116,6 +117,7 @@ def interactive_mode() -> dict:
                 "Use custom filename?",
                 default=False,
                 style=custom_style,
+                instruction="(y/n)",
             ).ask()
 
             if use_custom is None:
