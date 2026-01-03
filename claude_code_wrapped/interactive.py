@@ -12,10 +12,10 @@ from rich.console import Console
 custom_style = Style([
     ('qmark', 'fg:#E67E22 bold'),       # Orange question mark
     ('question', 'bold'),                # Question text
-    ('answer', 'fg:#9B59B6 bold'),      # Purple answer
+    ('answer', 'fg:#27AE60 bold'),      # Green answer
     ('pointer', 'fg:#E67E22 bold'),     # Orange pointer
     ('highlighted', 'fg:#E67E22 bold'), # Orange highlighted choice
-    ('selected', 'fg:#9B59B6'),         # Purple selected (no background)
+    ('selected', 'fg:#27AE60'),         # Green selected (no background)
     ('separator', 'fg:#7F8C8D'),        # Gray separator
     ('instruction', 'fg:#7F8C8D'),      # Gray instructions
 ])
