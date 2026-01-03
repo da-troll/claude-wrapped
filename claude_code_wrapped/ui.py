@@ -41,6 +41,16 @@ def format_year_display(year: int | None) -> str:
     return "All time" if year is None else str(year)
 
 
+def create_dashboard_header(year: int | None) -> Text:
+    """Create the dashboard header bar."""
+    header = Text()
+    header.append("═" * 60 + "\n", style=Style(color=COLORS["orange"]))
+    header.append("  CLAUDE CODE WRAPPED ", style=Style(color=COLORS["white"], bold=True))
+    header.append(format_year_display(year), style=Style(color=COLORS["orange"], bold=True))
+    header.append("\n" + "═" * 60, style=Style(color=COLORS["orange"]))
+    return header
+
+
 def create_dramatic_stat(value: str, label: str, subtitle: str = "", color: str = COLORS["orange"], extra_lines: list[tuple[str, str]] = None) -> Text:
     """Create a dramatic full-screen stat reveal."""
     text = Text()
@@ -657,16 +667,13 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
         wait_for_keypress()
         console.clear()
 
-    # === DASHBOARD VIEW ===
-    console.print()
+    # === DASHBOARD VIEW - Split into 4 panels ===
 
-    # Header
-    header = Text()
-    header.append("═" * 60 + "\n", style=Style(color=COLORS["orange"]))
-    header.append("  CLAUDE CODE WRAPPED ", style=Style(color=COLORS["white"], bold=True))
-    header.append(format_year_display(stats.year), style=Style(color=COLORS["orange"], bold=True))
-    header.append("\n" + "═" * 60, style=Style(color=COLORS["orange"]))
-    console.print(Align.center(header))
+    # PANEL 1: Big Stats + Activity Graph
+    if animate:
+        console.clear()
+    console.print()
+    console.print(Align.center(create_dashboard_header(stats.year)))
     console.print()
 
     # Big stats row
@@ -688,6 +695,17 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
     # Contribution graph
     console.print(create_contribution_graph(stats.daily_stats, stats.year))
 
+    if animate:
+        console.print()
+        wait_for_keypress()
+
+    # PANEL 2: Personality + Days + Hours
+    if animate:
+        console.clear()
+    console.print()
+    console.print(Align.center(create_dashboard_header(stats.year)))
+    console.print()
+
     # Charts row
     charts = Table(show_header=False, box=None, padding=(0, 1), expand=True)
     charts.add_column(ratio=1)
@@ -700,6 +718,17 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     # Hour chart
     console.print(create_hour_chart(stats.hourly_distribution))
+
+    if animate:
+        console.print()
+        wait_for_keypress()
+
+    # PANEL 3: Top Tools + Projects + MCPs
+    if animate:
+        console.clear()
+    console.print()
+    console.print(Align.center(create_dashboard_header(stats.year)))
+    console.print()
 
     # Top lists
     lists = Table(show_header=False, box=None, padding=(0, 1), expand=True)
@@ -714,6 +743,17 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
     # MCPs (if any)
     if stats.top_mcps:
         console.print(create_top_list(stats.top_mcps, "MCP Servers", COLORS["purple"]))
+
+    if animate:
+        console.print()
+        wait_for_keypress()
+
+    # PANEL 4: Monthly Costs + Insights
+    if animate:
+        console.clear()
+    console.print()
+    console.print(Align.center(create_dashboard_header(stats.year)))
+    console.print()
 
     # Monthly cost table
     if stats.monthly_costs:
