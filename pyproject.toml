@@ -1,7 +1,7 @@
 [project]
 name = "claude-wrapped"
 version = "1.0.2"
-description = "Your year with Claude Code - Spotify Wrapped style terminal experience"
+description = "Your history with Claude Code - a Spotify Wrapped style visual terminal experience."
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
