@@ -17,7 +17,7 @@ from .stats import WrappedStats, format_tokens
 
 # Minimal color palette
 COLORS = {
-    "orange": "#E67E22",
+    "orange": "#C96442",
     "purple": "#9B59B6",
     "blue": "#3498DB",
     "green": "#27AE60",
