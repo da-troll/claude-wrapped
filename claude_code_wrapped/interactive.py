@@ -60,10 +60,7 @@ def interactive_mode() -> dict:
             style=custom_style,
             use_shortcuts=True,
             use_arrow_keys=True,
-        ).ask()
-
-        if year_answer is None:  # User pressed Ctrl+C
-            sys.exit(0)
+        ).unsafe_ask()
 
         # Convert "All time" to "all" for internal use
         year = "all" if year_answer == "All time" else year_answer
@@ -81,10 +78,7 @@ def interactive_mode() -> dict:
             style=custom_style,
             use_shortcuts=True,
             use_arrow_keys=True,
-        ).ask()
-
-        if export_answer is None:
-            sys.exit(0)
+        ).unsafe_ask()
 
         # Parse export selections
         html = "HTML" in export_answer and "JSON" not in export_answer
@@ -98,10 +92,7 @@ def interactive_mode() -> dict:
                 default=True,
                 style=custom_style,
                 instruction="(y/n)",
-            ).ask()
-
-            if animate_answer is None:
-                sys.exit(0)
+            ).unsafe_ask()
 
             no_animate = not animate_answer
         else:
@@ -115,20 +106,14 @@ def interactive_mode() -> dict:
                 default=False,
                 style=custom_style,
                 instruction="(y/n)",
-            ).ask()
-
-            if use_custom is None:
-                sys.exit(0)
+            ).unsafe_ask()
 
             if use_custom:
                 output_filename = questionary.text(
                     "Enter filename (without extension):",
                     style=custom_style,
                     validate=lambda text: len(text) > 0 or "Filename cannot be empty",
-                ).ask()
-
-                if output_filename is None:
-                    sys.exit(0)
+                ).unsafe_ask()
 
         console.print()  # Add spacing before execution
 
@@ -142,7 +127,7 @@ def interactive_mode() -> dict:
         }
 
     except KeyboardInterrupt:
-        console.print("\n\n[yellow]Cancelled by user.[/yellow]")
+        console.print("\n\n[yellow]Cancelled.[/yellow]")
         sys.exit(0)
 
 
