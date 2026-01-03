@@ -694,6 +694,9 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     if animate:
         console.print()
+        prompt_text = Text()
+        prompt_text.append("press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+        console.print(prompt_text)
         wait_for_keypress()
 
     # PANEL 2: Personality + Days + Hours
@@ -718,6 +721,9 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     if animate:
         console.print()
+        prompt_text = Text()
+        prompt_text.append("press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+        console.print(prompt_text)
         wait_for_keypress()
 
     # PANEL 3: Top Tools + Projects + MCPs
@@ -743,6 +749,9 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     if animate:
         console.print()
+        prompt_text = Text()
+        prompt_text.append("press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+        console.print(prompt_text)
         wait_for_keypress()
 
     # PANEL 4: Monthly Costs + Insights
@@ -771,6 +780,13 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     console.print()
     console.print(Align.center(insights))
+
+    if animate:
+        console.print()
+        prompt_text = Text()
+        prompt_text.append("press [ENTER] to continue", style=Style(color=COLORS["dark"]))
+        console.print(prompt_text)
+        wait_for_keypress()
 
     # === CREDITS SEQUENCE ===
     if animate:
