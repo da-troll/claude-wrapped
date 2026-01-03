@@ -10,12 +10,12 @@ from rich.console import Console
 
 # Custom styling to match the wrapped aesthetic
 custom_style = Style([
-    ('qmark', 'fg:#E67E22 bold'),       # Orange question mark
+    ('qmark', 'fg:#C96442 bold'),       # Coral question mark
     ('question', 'bold'),                # Question text
-    ('answer', 'fg:#9B59B6 bold'),      # Purple answer
-    ('pointer', 'fg:#E67E22 bold'),     # Orange pointer
-    ('highlighted', 'fg:#E67E22 bold'), # Orange highlighted choice
-    ('selected', 'fg:#9B59B6'),         # Purple selected
+    ('answer', 'fg:#C96442 bold'),      # Coral answer
+    ('pointer', 'fg:#C96442 bold'),     # Coral pointer
+    ('highlighted', 'fg:#C96442 bold'), # Coral highlighted choice
+    ('selected', ''),                    # No special style for selected (removes purple)
     ('separator', 'fg:#7F8C8D'),        # Gray separator
     ('instruction', 'fg:#7F8C8D'),      # Gray instructions
 ])
@@ -74,10 +74,10 @@ def interactive_mode() -> dict:
             "Export format:",
             choices=[
                 "View in terminal only",
-                "Export to HTML",
-                "Export to Markdown",
-                "Export to both HTML & Markdown",
-                "Export to JSON",
+                "View in terminal + Export to HTML",
+                "View in terminal + Export to Markdown",
+                "View in terminal + Export to HTML & Markdown",
+                "Export to JSON only",
             ],
             style=custom_style,
             default="View in terminal only",
@@ -88,12 +88,12 @@ def interactive_mode() -> dict:
             sys.exit(0)
 
         # Parse export selections
-        html = "HTML" in export_answer
+        html = "HTML" in export_answer and "JSON" not in export_answer
         markdown = "Markdown" in export_answer
         json_export = "JSON" in export_answer
 
         # 3. Ask about animations (only if viewing in terminal)
-        if export_answer == "View in terminal only" or html or markdown:
+        if "View in terminal" in export_answer:
             animate_answer = questionary.confirm(
                 "Show animations?",
                 default=True,
