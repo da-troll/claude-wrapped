@@ -429,26 +429,38 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     if stats.estimated_cost is not None:
         numbers.append(f"              Estimated Cost  ", style=Style(color=COLORS["white"], bold=True))
         numbers.append(f"{format_cost(stats.estimated_cost)}\n", style=Style(color=COLORS["green"], bold=True))
+        # Calculate max model name length for alignment
+        max_model_len = max(len(model) for model in display_costs.keys()) if display_costs else 0
         for model, cost in sorted(display_costs.items(), key=lambda x: -x[1]):
-            numbers.append(f"                {model}: {format_cost(cost)}\n", style=Style(color=COLORS["gray"]))
+            # Right-align cost values with main cost
+            cost_str = format_cost(cost)
+            main_cost_str = format_cost(stats.estimated_cost)
+            padding = len("Estimated Cost  " + main_cost_str) - len(model + ": " + cost_str)
+            numbers.append(f"              {model}: {' ' * padding}{cost_str}\n", style=Style(color=COLORS["gray"]))
     numbers.append(f"\n              Tokens  ", style=Style(color=COLORS["white"], bold=True))
     numbers.append(f"{format_tokens(stats.total_tokens)}\n", style=Style(color=COLORS["orange"], bold=True))
-    numbers.append(f"                Input: {format_tokens(stats.total_input_tokens)}\n", style=Style(color=COLORS["gray"]))
-    numbers.append(f"                Output: {format_tokens(stats.total_output_tokens)}\n", style=Style(color=COLORS["gray"]))
+    # Right-align token breakdown values
+    tokens_str = format_tokens(stats.total_tokens)
+    input_str = format_tokens(stats.total_input_tokens)
+    output_str = format_tokens(stats.total_output_tokens)
+    input_padding = len("Tokens  " + tokens_str) - len("Input: " + input_str)
+    output_padding = len("Tokens  " + tokens_str) - len("Output: " + output_str)
+    numbers.append(f"              Input: {' ' * input_padding}{input_str}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"              Output: {' ' * output_padding}{output_str}\n", style=Style(color=COLORS["gray"]))
     numbers.append("\n\n")
-    numbers.append("[ENTER]", style=Style(color=COLORS["dark"]))
+    numbers.append("              [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(numbers)
 
     # Frame 2: Timeline (full year context)
     timeline = Text()
     timeline.append("\n\n\n")
     timeline.append("              T I M E L I N E\n\n", style=Style(color=COLORS["orange"], bold=True))
-    timeline.append("              Period         ", style=Style(color=COLORS["white"], bold=True))
+    timeline.append("              Period            ", style=Style(color=COLORS["white"], bold=True))
     # Use sentence case for "All time" in timeline
     period_text = "All time" if stats.year is None else str(stats.year)
     timeline.append(f"{period_text}\n", style=Style(color=COLORS["orange"], bold=True))
     if stats.first_message_date:
-        timeline.append("              Journey started ", style=Style(color=COLORS["white"], bold=True))
+        timeline.append("              Journey started   ", style=Style(color=COLORS["white"], bold=True))
         timeline.append(f"{stats.first_message_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
     # Calculate total days
     today = datetime.now()
@@ -462,16 +474,16 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         total_days = (today - datetime(stats.year, 1, 1)).days + 1
     else:
         total_days = 366 if stats.year % 4 == 0 else 365
-    timeline.append(f"\n              Active days    ", style=Style(color=COLORS["white"], bold=True))
+    timeline.append(f"\n              Active days       ", style=Style(color=COLORS["white"], bold=True))
     timeline.append(f"{stats.active_days}", style=Style(color=COLORS["orange"], bold=True))
     timeline.append(f" of {total_days}\n", style=Style(color=COLORS["gray"]))
     if stats.most_active_hour is not None:
         hour_label = "AM" if stats.most_active_hour < 12 else "PM"
         hour_12 = stats.most_active_hour % 12 or 12
-        timeline.append(f"              Peak hour      ", style=Style(color=COLORS["white"], bold=True))
+        timeline.append(f"              Peak hour         ", style=Style(color=COLORS["white"], bold=True))
         timeline.append(f"{hour_12}:00 {hour_label}\n", style=Style(color=COLORS["purple"], bold=True))
     timeline.append("\n\n")
-    timeline.append("[ENTER]", style=Style(color=COLORS["dark"]))
+    timeline.append("              [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(timeline)
 
     # Frame 3: Averages
@@ -480,16 +492,16 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     averages.append("\n\n\n")
     averages.append("              A V E R A G E S\n\n", style=Style(color=COLORS["blue"], bold=True))
     averages.append("              Messages\n", style=Style(color=COLORS["white"], bold=True))
-    averages.append(f"                Per day:   {stats.avg_messages_per_day:.1f}\n", style=Style(color=COLORS["gray"]))
-    averages.append(f"                Per week:  {stats.avg_messages_per_week:.1f}\n", style=Style(color=COLORS["gray"]))
-    averages.append(f"                Per month: {stats.avg_messages_per_month:.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"              Per day:   {stats.avg_messages_per_day:.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"              Per week:  {stats.avg_messages_per_week:.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"              Per month: {stats.avg_messages_per_month:.1f}\n", style=Style(color=COLORS["gray"]))
     if stats.estimated_cost is not None:
         averages.append("\n              Cost\n", style=Style(color=COLORS["white"], bold=True))
-        averages.append(f"                Per day:   {format_cost(stats.avg_cost_per_day)}\n", style=Style(color=COLORS["gray"]))
-        averages.append(f"                Per week:  {format_cost(stats.avg_cost_per_week)}\n", style=Style(color=COLORS["gray"]))
-        averages.append(f"                Per month: {format_cost(stats.avg_cost_per_month)}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"              Per day:   {format_cost(stats.avg_cost_per_day)}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"              Per week:  {format_cost(stats.avg_cost_per_week)}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"              Per month: {format_cost(stats.avg_cost_per_month)}\n", style=Style(color=COLORS["gray"]))
     averages.append("\n\n")
-    averages.append("[ENTER]", style=Style(color=COLORS["dark"]))
+    averages.append("              [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(averages)
 
     # Frame 4: Longest Streak (if significant)
@@ -507,7 +519,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         if stats.streak_current > 0:
             streak.append(f"\n              Current streak: {stats.streak_current} days\n", style=Style(color=COLORS["gray"]))
         streak.append("\n\n")
-        streak.append("[ENTER]", style=Style(color=COLORS["dark"]))
+        streak.append("              [ENTER]", style=Style(color=COLORS["dark"]))
         frames.append(streak)
 
     # Frame 5: Longest Conversation
@@ -515,17 +527,17 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         longest = Text()
         longest.append("\n\n\n")
         longest.append("              L O N G E S T   C O N V E R S A T I O N\n\n", style=Style(color=COLORS["purple"], bold=True))
-        longest.append(f"              Messages  ", style=Style(color=COLORS["white"], bold=True))
+        longest.append(f"              Messages    ", style=Style(color=COLORS["white"], bold=True))
         longest.append(f"{stats.longest_conversation_messages:,}\n", style=Style(color=COLORS["purple"], bold=True))
         if stats.longest_conversation_tokens > 0:
-            longest.append(f"              Tokens    ", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"              Tokens      ", style=Style(color=COLORS["white"], bold=True))
             longest.append(f"{format_tokens(stats.longest_conversation_tokens)}\n", style=Style(color=COLORS["orange"], bold=True))
         if stats.longest_conversation_date:
-            longest.append(f"              Date      ", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"              Date        ", style=Style(color=COLORS["white"], bold=True))
             longest.append(f"{stats.longest_conversation_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
         longest.append("\n              That's one epic coding session!\n", style=Style(color=COLORS["gray"]))
         longest.append("\n\n")
-        longest.append("[ENTER]", style=Style(color=COLORS["dark"]))
+        longest.append("              [ENTER]", style=Style(color=COLORS["dark"]))
         frames.append(longest)
 
     # Frame 6: Cast (models)
@@ -536,7 +548,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
         cast.append(f"              Claude {model}", style=Style(color=COLORS["white"], bold=True))
         cast.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
     cast.append("\n\n\n")
-    cast.append("[ENTER]", style=Style(color=COLORS["dark"]))
+    cast.append("              [ENTER]", style=Style(color=COLORS["dark"]))
     frames.append(cast)
 
     # Frame 7: Projects
@@ -548,7 +560,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
             projects.append(f"              {proj}", style=Style(color=COLORS["white"], bold=True))
             projects.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
         projects.append("\n\n\n")
-        projects.append("[ENTER]", style=Style(color=COLORS["dark"]))
+        projects.append("              [ENTER]", style=Style(color=COLORS["dark"]))
         frames.append(projects)
 
     # Frame 8: Final card
@@ -560,7 +572,7 @@ def create_credits_roll(stats: WrappedStats) -> list[Text]:
     else:
         final.append("       Nothing exploded. That's a win.", style=Style(color=COLORS["orange"], bold=True))
     final.append("\n\n\n\n\n\n", style=Style(color=COLORS["gray"]))
-    final.append("[ENTER] to exit", style=Style(color=COLORS["dark"]))
+    final.append("              [ENTER] to exit", style=Style(color=COLORS["dark"]))
     frames.append(final)
 
     return frames
