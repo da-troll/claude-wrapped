@@ -146,7 +146,7 @@ Examples:
         export_to_markdown(stats, year_filter, md_path)
         console.print(f"\n[green]✓[/green] Exported to [bold]{md_path}[/bold]")
 
-    # Output
+    # Export to JSON if requested
     if args.json:
         import json
         output = {
@@ -194,7 +194,15 @@ Examples:
             "longest_conversation_tokens": stats.longest_conversation_tokens,
             "longest_conversation_date": stats.longest_conversation_date.isoformat() if stats.longest_conversation_date else None,
         }
-        print(json.dumps(output, indent=2))
+        # Write to file (custom name or default)
+        if args.output:
+            output_name = args.output
+        else:
+            output_name = f"claude-wrapped-{year_display}-{timestamp}"
+        json_path = Path(f"{output_name}.json")
+        with open(json_path, 'w') as f:
+            json.dump(output, f, indent=2)
+        console.print(f"\n[green]✓[/green] Exported to [bold]{json_path}[/bold]")
     else:
         render_wrapped(stats, console, animate=not args.no_animate)
 
