@@ -16,6 +16,16 @@ from .interactive import interactive_mode, should_use_interactive_mode
 
 def main():
     """Main entry point for Claude Code Wrapped."""
+    try:
+        _run()
+    except KeyboardInterrupt:
+        console = Console()
+        console.print("\n\n[#C96442]You pulled the plug. No hard feelings.[/]")
+        sys.exit(0)
+
+
+def _run():
+    """Internal run function."""
     # Check if we should use interactive mode
     if should_use_interactive_mode():
         # Get user selections through interactive prompts

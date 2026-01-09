@@ -1,6 +1,6 @@
 """HTML export for Claude Code Wrapped."""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from ..stats import WrappedStats, format_tokens
@@ -265,15 +265,25 @@ def _get_css() -> str:
         }}
 
         .cost-table th {{
-            padding: 12px;
-            text-align: left;
+            padding: 12px 20px;
+            text-align: right;
             border-bottom: 2px solid #30363D;
             font-weight: bold;
         }}
 
+        .cost-table th:first-child {{
+            text-align: left;
+            width: 30%;
+        }}
+
         .cost-table td {{
-            padding: 12px;
+            padding: 12px 20px;
             border-bottom: 1px solid #30363D;
+            text-align: right;
+        }}
+
+        .cost-table td:first-child {{
+            text-align: left;
         }}
 
         .cost-table tr:last-child td {{
@@ -425,14 +435,17 @@ def _build_dramatic_reveals(stats: WrappedStats, start_date: datetime, end_date:
         <div class="reveal-subtitle">
             {}<br>
             <span style="color: var(--gray);">
-                Input: {} · Output: {}
+                Input: {} · Output: {}<br>
+                Cache write: {} · Cache read: {}
             </span>
         </div>
     </div>""".format(
         stats.total_tokens,
         format_tokens(stats.total_tokens),
         format_tokens(stats.total_input_tokens),
-        format_tokens(stats.total_output_tokens)
+        format_tokens(stats.total_output_tokens),
+        format_tokens(stats.total_cache_creation_tokens),
+        format_tokens(stats.total_cache_read_tokens)
     )
 
     return reveals
@@ -844,6 +857,8 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
         </div>
         <div class="credits-subitem">Input: {format_tokens(stats.total_input_tokens)}</div>
         <div class="credits-subitem">Output: {format_tokens(stats.total_output_tokens)}</div>
+        <div class="credits-subitem">Cache write: {format_tokens(stats.total_cache_creation_tokens)}</div>
+        <div class="credits-subitem">Cache read: {format_tokens(stats.total_cache_read_tokens)}</div>
     </div>'''
 
     # Frame 2: Timeline
@@ -851,13 +866,33 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
     if year is None:
         # All-time: calculate days from first to last message
         if stats.first_message_date and stats.last_message_date:
-            total_days = (stats.last_message_date - stats.first_message_date).days + 1
+            total_days_year = (stats.last_message_date - stats.first_message_date).days + 1
         else:
-            total_days = stats.active_days
+            total_days_year = stats.active_days
     elif year == today.year:
-        total_days = (today - datetime(year, 1, 1)).days + 1
+        total_days_year = (today - datetime(year, 1, 1)).days + 1
     else:
-        total_days = 366 if year % 4 == 0 else 365
+        total_days_year = 366 if year % 4 == 0 else 365
+
+    # Calculate days since journey start
+    if stats.first_message_date:
+        if year is None:
+            # All-time: days from first to last message
+            if stats.last_message_date:
+                days_since_journey = (stats.last_message_date - stats.first_message_date).days + 1
+            else:
+                days_since_journey = stats.active_days
+        elif year == today.year:
+            # Current year: days from first message to today
+            first_msg_date = stats.first_message_date.date() if hasattr(stats.first_message_date, 'date') else stats.first_message_date
+            days_since_journey = (today.date() - first_msg_date).days + 1
+        else:
+            # Past year: days from first message to end of year
+            year_end = datetime(year, 12, 31).date()
+            first_msg_date = stats.first_message_date.date() if hasattr(stats.first_message_date, 'date') else stats.first_message_date
+            days_since_journey = (year_end - first_msg_date).days + 1
+    else:
+        days_since_journey = stats.active_days
 
     year_display = format_year_display(year)
     # Use sentence case for "All time" in Period field
@@ -877,11 +912,20 @@ def _build_credits(stats: WrappedStats, year: int | None) -> str:
             <span class="credits-value" style="color: var(--gray);">{stats.first_message_date.strftime('%B %d')}</span>
         </div>'''
 
+    year_pct = (stats.active_days / total_days_year * 100) if total_days_year > 0 else 0
+    journey_pct = (stats.active_days / days_since_journey * 100) if days_since_journey > 0 else 0
     html += f'''
         <div class="credits-item">
             <span class="credits-label">Active days</span>
             <span class="credits-value" style="color: var(--orange);">{stats.active_days}</span>
-            <span style="color: var(--gray);"> of {total_days}</span>
+        </div>
+        <div class="credits-item">
+            <span class="credits-label">Active days of year</span>
+            <span class="credits-value" style="color: var(--gray);">{year_pct:.1f}%</span>
+        </div>
+        <div class="credits-item">
+            <span class="credits-label">Active days on journey</span>
+            <span class="credits-value" style="color: var(--purple);">{journey_pct:.1f}%</span>
         </div>'''
 
     if stats.most_active_hour is not None:
