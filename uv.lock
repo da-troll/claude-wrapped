@@ -3,8 +3,8 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "claude-code-wrapped"
-version = "0.1.11"
+name = "claude-wrapped"
+version = "1.0.6"
 source = { editable = "." }
 dependencies = [
     { name = "python-dotenv" },

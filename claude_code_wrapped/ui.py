@@ -450,8 +450,8 @@ def animate_contribution_graph(console: Console, daily_stats: dict, year: int | 
                     color = CONTRIB_COLORS[week[row]]
                     graph.append("■ ", style=Style(color=color))
                 else:
-                    # Empty placeholder (dark gray)
-                    graph.append("■ ", style=Style(color=COLORS["dark"]))
+                    # Invisible placeholder (just spaces)
+                    graph.append("  ")
                 squares_shown += 1
             graph.append("\n")
 
@@ -471,13 +471,10 @@ def animate_contribution_graph(console: Console, daily_stats: dict, year: int | 
 
     total_squares = 7 * num_weeks
 
-    with Live(build_graph_frame(0), console=console, refresh_per_second=60, transient=True) as live:
+    with Live(build_graph_frame(0), console=console, refresh_per_second=60, transient=False) as live:
         for i in range(total_squares + 1):
             live.update(build_graph_frame(i))
             time.sleep(delay)
-
-    # Print final state
-    console.print(build_graph_frame(total_squares))
 
 
 def create_hour_chart(distribution: list[int]) -> Panel:
@@ -486,6 +483,7 @@ def create_hour_chart(distribution: list[int]) -> Panel:
     chars = "▁▂▃▄▅▆▇█"
 
     content = Text()
+    content.append("\n")  # Empty line above bars
     for i, val in enumerate(distribution):
         idx = int((val / max_val) * (len(chars) - 1)) if max_val > 0 else 0
         if 6 <= i < 12:
@@ -498,17 +496,16 @@ def create_hour_chart(distribution: list[int]) -> Panel:
             color = COLORS["gray"]
         content.append(chars[idx], style=Style(color=color))
 
-    # Build aligned label (24 chars to match 24 bars)
-    # Labels at positions: 0, 6, 12, 18, with end marker
+    # Labels aligned with 24 bars: 0 at pos 0, 6 at pos 6, 12 at pos 12, 18 at pos 18, 24 at end
     content.append("\n")
-    content.append("0     6     12    18    24", style=Style(color=COLORS["gray"]))
+    content.append("0    6     12    18    24", style=Style(color=COLORS["gray"]))
+    content.append("\n")  # Empty line below labels
 
     return Panel(
-        Align.center(content),
+        content,
         title="Hours",
         border_style=Style(color=COLORS["yellow"]),
         padding=(0, 1),
-        expand=True,
     )
 
 
@@ -517,17 +514,20 @@ def create_weekday_chart(distribution: list[int], width: int = 80) -> Panel:
     days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     max_val = max(distribution) if any(distribution) else 1
 
-    # Calculate bar width: width - day label (4) - count (~8) - padding/borders (~6)
-    bar_width = max(10, width - 18)
+    # Find longest count string for alignment
+    max_count_width = max(len(f"{c:,}") for c in distribution)
+    # Calculate bar width: width - day (4) - count width - borders/padding (~8)
+    bar_width = max(10, width - max_count_width - 12)
 
     content = Text()
-    content.append("\n")  # Add spacing above Monday
+    content.append("\n")  # Empty line above first row
     for i, (day, count) in enumerate(zip(days, distribution)):
         bar_len = int((count / max_val) * bar_width) if max_val > 0 else 0
         bar = "█" * bar_len + "░" * (bar_width - bar_len)
+        count_str = f"{count:,}".rjust(max_count_width)
         content.append(f"{day} ", style=Style(color=COLORS["gray"]))
         content.append(bar, style=Style(color=COLORS["blue"]))
-        content.append(f" {count:,}\n", style=Style(color=COLORS["gray"]))
+        content.append(f" {count_str}\n", style=Style(color=COLORS["gray"]))
 
     return Panel(
         content,
@@ -544,14 +544,15 @@ def create_top_list(items: list[tuple[str, int]], title: str, color: str, width:
     content.append("\n")  # Add spacing above first item
     max_val = max(v for _, v in items) if items else 1
 
-    # Calculate bar width for the bar line
-    # Overhead: panel border (2), padding (2), count " XX,XXX" (~8) = 12 chars
-    bar_width = max(8, width - 12)
+    # Find the widest count string for proper alignment
+    max_count_width = max(len(f"{v:,}") for _, v in items) if items else 1
+    # Calculate bar width: width - border (2) - padding (2) - table padding (2) - space (1) - count width
+    bar_width = max(8, width - 8 - max_count_width)
 
     for i, (name, count) in enumerate(items[:5], 1):
         # Line 1: rank + name
         content.append(f"{i}. ", style=Style(color=COLORS["gray"]))
-        content.append(f"{name[:12]}\n", style=Style(color=COLORS["white"]))
+        content.append(f"{name}\n", style=Style(color=COLORS["white"]))
         # Line 2: bar + count
         bar_len = int((count / max_val) * bar_width)
         content.append("▓" * bar_len, style=Style(color=color))
@@ -571,15 +572,16 @@ def create_personality_card(stats: WrappedStats) -> Panel:
     personality = determine_personality(stats)
 
     content = Text()
-    content.append(f"\n  {personality['emoji']}  ", style=Style(bold=True))
+    content.append(f"\n{personality['emoji']}  ", style=Style(bold=True))
     content.append(f"{personality['title']}\n\n", style=Style(color=COLORS["purple"], bold=True))
-    content.append(f"  {personality['description']}\n", style=Style(color=COLORS["gray"]))
+    # Description without extra indent - let Panel padding handle alignment
+    content.append(f"{personality['description']}\n", style=Style(color=COLORS["gray"]))
 
     return Panel(
         content,
         title="Your Type",
         border_style=Style(color=COLORS["purple"]),
-        padding=(0, 1),
+        padding=(0, 2),
     )
 
 
@@ -631,8 +633,8 @@ def get_fun_facts(stats: WrappedStats) -> list[tuple[str, str]]:
 
 def create_fun_facts_slide(facts: list[tuple[str, str]], console_width: int = 80, console_height: int = 24) -> Text:
     """Create a fun facts slide (without prompt text)."""
-    # Left quarter position
-    pad = " " * (console_width // 4)
+    # Left sixth position (moved further left)
+    pad = " " * (console_width // 6)
 
     # Calculate content height: title (1) + blank lines (2) + facts (2 lines each) + prompt (2)
     content_height = 1 + 2 + len(facts) * 2 + 2
@@ -640,7 +642,7 @@ def create_fun_facts_slide(facts: list[tuple[str, str]], console_width: int = 80
 
     text = Text()
     text.append("\n" * vertical_pad)
-    text.append(f"{pad}B L O O P E R S  &  F U N  F A C T S\n\n", style=Style(color=COLORS["purple"], bold=True))
+    text.append(f"{pad}F U N  F A C T S\n\n", style=Style(color=COLORS["purple"], bold=True))
 
     for emoji, fact in facts:
         text.append(f"{pad}{emoji} ", style=Style(bold=True))
@@ -731,7 +733,7 @@ def create_monthly_cost_table(stats: WrappedStats) -> Panel:
         table,
         title="Monthly Cost Breakdown",
         border_style=Style(color=COLORS["green"]),
-        padding=(0, 1),
+        padding=(1, 1),
     )
 
 
@@ -739,8 +741,12 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     """Create end credits content."""
     from .pricing import format_cost
 
-    # Dynamic positioning based on console width - all sections at left quarter
-    pad = " " * (console_width // 4)
+    # Consistent label/value widths for all frames
+    label_width = 20
+    value_width = 10
+    content_block_width = label_width + value_width
+    # Dynamic positioning - center content block
+    pad = " " * ((console_width - content_block_width) // 2)
 
     def vertical_center(content_lines: int) -> str:
         """Return newlines needed to vertically center content."""
@@ -759,30 +765,26 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     # Frame 1: The Numbers (cost + tokens) - ~15 content lines
     numbers = Text()
     numbers.append(vertical_center(15))
+
     numbers.append(f"{pad}T H E   N U M B E R S\n\n", style=Style(color=COLORS["green"], bold=True))
+
     if stats.estimated_cost is not None:
-        numbers.append(f"{pad}Estimated Cost              ", style=Style(color=COLORS["white"], bold=True))
-        numbers.append(f"{format_cost(stats.estimated_cost):>20}\n", style=Style(color=COLORS["green"], bold=True))
+        numbers.append(f"{pad}{'Estimated Cost':<{label_width}}", style=Style(color=COLORS["white"], bold=True))
+        numbers.append(f"{format_cost(stats.estimated_cost):>{value_width}}\n", style=Style(color=COLORS["green"], bold=True))
         for model, cost in sorted(display_costs.items(), key=lambda x: -x[1]):
-            cost_str = format_cost(cost)
-            numbers.append(f"{pad}{model}{'':>{27 - len(model)}}", style=Style(color=COLORS["gray"]))
-            numbers.append(f"{cost_str:>20}\n", style=Style(color=COLORS["gray"]))
-    numbers.append(f"\n{pad}Tokens                      ", style=Style(color=COLORS["white"], bold=True))
-    tokens_str = format_tokens(stats.total_tokens)
-    numbers.append(f"{tokens_str:>20}\n", style=Style(color=COLORS["orange"], bold=True))
-    # Right-align token breakdown values
-    input_str = format_tokens(stats.total_input_tokens)
-    output_str = format_tokens(stats.total_output_tokens)
-    cache_create_str = format_tokens(stats.total_cache_creation_tokens)
-    cache_read_str = format_tokens(stats.total_cache_read_tokens)
-    numbers.append(f"{pad}Input                       ", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{input_str:>20}\n", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{pad}Output                      ", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{output_str:>20}\n", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{pad}Cache write                 ", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{cache_create_str:>20}\n", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{pad}Cache read                  ", style=Style(color=COLORS["gray"]))
-    numbers.append(f"{cache_read_str:>20}\n", style=Style(color=COLORS["gray"]))
+            numbers.append(f"{pad}{model:<{label_width}}", style=Style(color=COLORS["gray"]))
+            numbers.append(f"{format_cost(cost):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+
+    numbers.append(f"\n{pad}{'Tokens':<{label_width}}", style=Style(color=COLORS["white"], bold=True))
+    numbers.append(f"{format_tokens(stats.total_tokens):>{value_width}}\n", style=Style(color=COLORS["orange"], bold=True))
+    numbers.append(f"{pad}{'Input':<{label_width}}", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{format_tokens(stats.total_input_tokens):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{pad}{'Output':<{label_width}}", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{format_tokens(stats.total_output_tokens):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{pad}{'Cache write':<{label_width}}", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{format_tokens(stats.total_cache_creation_tokens):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{pad}{'Cache read':<{label_width}}", style=Style(color=COLORS["gray"]))
+    numbers.append(f"{format_tokens(stats.total_cache_read_tokens):>{value_width}}\n", style=Style(color=COLORS["gray"]))
     numbers.append("\n\n")
     labeled_frames.append((numbers, "numbers"))
 
@@ -800,11 +802,8 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     # Calculate total days in year
     today = datetime.now()
     if stats.year is None:
-        # All-time: calculate days from first to last message
-        if stats.first_message_date and stats.last_message_date:
-            total_days_year = (stats.last_message_date - stats.first_message_date).days + 1
-        else:
-            total_days_year = stats.active_days
+        # All-time: use 365 as standard year reference
+        total_days_year = 365
     elif stats.year == today.year:
         total_days_year = (today - datetime(stats.year, 1, 1)).days + 1
     else:
@@ -849,28 +848,26 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     timeline.append("\n\n")
     labeled_frames.append((timeline, "timeline"))
 
-    # Frame 3: Averages - ~12 content lines
+    # Frame 3: Averages - ~12 content lines (use same label/value widths as numbers)
     from .pricing import format_cost
     averages = Text()
     averages.append(vertical_center(12))
     averages.append(f"{pad}A V E R A G E S\n\n", style=Style(color=COLORS["blue"], bold=True))
-    averages.append(f"{pad}Messages                    ", style=Style(color=COLORS["white"], bold=True))
-    averages.append("\n", style=Style(color=COLORS["white"]))
-    averages.append(f"{pad}Per day                     ", style=Style(color=COLORS["gray"]))
-    averages.append(f"{stats.avg_messages_per_day:>20.1f}\n", style=Style(color=COLORS["gray"]))
-    averages.append(f"{pad}Per week                    ", style=Style(color=COLORS["gray"]))
-    averages.append(f"{stats.avg_messages_per_week:>20.1f}\n", style=Style(color=COLORS["gray"]))
-    averages.append(f"{pad}Per month                   ", style=Style(color=COLORS["gray"]))
-    averages.append(f"{stats.avg_messages_per_month:>20.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"{pad}{'Messages':<{label_width}}\n", style=Style(color=COLORS["white"], bold=True))
+    averages.append(f"{pad}{'Per day':<{label_width}}", style=Style(color=COLORS["gray"]))
+    averages.append(f"{stats.avg_messages_per_day:>{value_width}.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"{pad}{'Per week':<{label_width}}", style=Style(color=COLORS["gray"]))
+    averages.append(f"{stats.avg_messages_per_week:>{value_width}.1f}\n", style=Style(color=COLORS["gray"]))
+    averages.append(f"{pad}{'Per month':<{label_width}}", style=Style(color=COLORS["gray"]))
+    averages.append(f"{stats.avg_messages_per_month:>{value_width}.1f}\n", style=Style(color=COLORS["gray"]))
     if stats.estimated_cost is not None:
-        averages.append(f"\n{pad}Cost                        ", style=Style(color=COLORS["white"], bold=True))
-        averages.append("\n", style=Style(color=COLORS["white"]))
-        averages.append(f"{pad}Per day                     ", style=Style(color=COLORS["gray"]))
-        averages.append(f"{format_cost(stats.avg_cost_per_day):>20}\n", style=Style(color=COLORS["gray"]))
-        averages.append(f"{pad}Per week                    ", style=Style(color=COLORS["gray"]))
-        averages.append(f"{format_cost(stats.avg_cost_per_week):>20}\n", style=Style(color=COLORS["gray"]))
-        averages.append(f"{pad}Per month                   ", style=Style(color=COLORS["gray"]))
-        averages.append(f"{format_cost(stats.avg_cost_per_month):>20}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"\n{pad}{'Cost':<{label_width}}\n", style=Style(color=COLORS["white"], bold=True))
+        averages.append(f"{pad}{'Per day':<{label_width}}", style=Style(color=COLORS["gray"]))
+        averages.append(f"{format_cost(stats.avg_cost_per_day):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"{pad}{'Per week':<{label_width}}", style=Style(color=COLORS["gray"]))
+        averages.append(f"{format_cost(stats.avg_cost_per_week):>{value_width}}\n", style=Style(color=COLORS["gray"]))
+        averages.append(f"{pad}{'Per month':<{label_width}}", style=Style(color=COLORS["gray"]))
+        averages.append(f"{format_cost(stats.avg_cost_per_month):>{value_width}}\n", style=Style(color=COLORS["gray"]))
     averages.append("\n\n")
     labeled_frames.append((averages, "averages"))
 
@@ -879,13 +876,18 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
         streak = Text()
         streak.append(vertical_center(10))
         streak.append(f"{pad}L O N G E S T   S T R E A K\n\n", style=Style(color=COLORS["blue"], bold=True))
+        # Calculate width of "XX days of consistent coding" for alignment
+        streak_text = f"{stats.streak_longest} days of consistent coding"
+        streak_width = len(streak_text)
         streak.append(f"{pad}{stats.streak_longest}", style=Style(color=COLORS["blue"], bold=True))
         streak.append(" days of consistent coding\n\n", style=Style(color=COLORS["white"], bold=True))
-        streak.append(f"{pad}From  ", style=Style(color=COLORS["white"], bold=True))
-        streak.append(f"{stats.streak_longest_start.strftime('%B %d, %Y'):>29}\n", style=Style(color=COLORS["gray"]))
-        streak.append(f"{pad}To    ", style=Style(color=COLORS["white"], bold=True))
-        streak.append(f"{stats.streak_longest_end.strftime('%B %d, %Y'):>29}\n", style=Style(color=COLORS["gray"]))
-        streak.append(f"\n{pad}Consistency is the key to mastery.\n", style=Style(color=COLORS["gray"]))
+        # Align dates to right edge of streak text
+        date_value_width = streak_width - 4  # "From" is 4 chars
+        streak.append(f"{pad}From", style=Style(color=COLORS["white"], bold=True))
+        streak.append(f"{stats.streak_longest_start.strftime('%B %d, %Y'):>{date_value_width}}\n", style=Style(color=COLORS["gray"]))
+        streak.append(f"{pad}To  ", style=Style(color=COLORS["white"], bold=True))
+        streak.append(f"{stats.streak_longest_end.strftime('%B %d, %Y'):>{date_value_width}}\n", style=Style(color=COLORS["gray"]))
+        streak.append(f"\n\n{pad}Consistency is the key to mastery.\n", style=Style(color=COLORS["gray"]))
         if stats.streak_current > 0:
             streak.append(f"\n{pad}Current streak: {stats.streak_current} days\n", style=Style(color=COLORS["gray"]))
         streak.append("\n\n")
@@ -895,16 +897,22 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     if stats.longest_conversation_messages > 0:
         longest = Text()
         longest.append(vertical_center(10))
-        longest.append(f"{pad}L O N G E S T   C O N V E R S A T I O N\n\n", style=Style(color=COLORS["purple"], bold=True))
-        longest.append(f"{pad}Messages    ", style=Style(color=COLORS["white"], bold=True))
-        longest.append(f"{stats.longest_conversation_messages:,}\n", style=Style(color=COLORS["purple"], bold=True))
+        title_text = "L O N G E S T   C O N V E R S A T I O N"
+        longest.append(f"{pad}{title_text}\n\n", style=Style(color=COLORS["purple"], bold=True))
+        # Align values to right edge of title
+        conv_width = len(title_text)
+        conv_label_width = 10
+        conv_value_width = conv_width - conv_label_width
+        longest.append(f"{pad}{'Messages':<{conv_label_width}}", style=Style(color=COLORS["white"], bold=True))
+        longest.append(f"{stats.longest_conversation_messages:>{conv_value_width},}\n", style=Style(color=COLORS["purple"], bold=True))
         if stats.longest_conversation_tokens > 0:
-            longest.append(f"{pad}Tokens      ", style=Style(color=COLORS["white"], bold=True))
-            longest.append(f"{format_tokens(stats.longest_conversation_tokens)}\n", style=Style(color=COLORS["orange"], bold=True))
+            longest.append(f"{pad}{'Tokens':<{conv_label_width}}", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"{format_tokens(stats.longest_conversation_tokens):>{conv_value_width}}\n", style=Style(color=COLORS["orange"], bold=True))
         if stats.longest_conversation_date:
-            longest.append(f"{pad}Date        ", style=Style(color=COLORS["white"], bold=True))
-            longest.append(f"{stats.longest_conversation_date.strftime('%B %d, %Y')}\n", style=Style(color=COLORS["gray"]))
-        longest.append(f"\n{pad}That's one epic coding session!\n", style=Style(color=COLORS["gray"]))
+            longest.append(f"{pad}{'Date':<{conv_label_width}}", style=Style(color=COLORS["white"], bold=True))
+            longest.append(f"{stats.longest_conversation_date.strftime('%B %d, %Y'):>{conv_value_width}}\n", style=Style(color=COLORS["gray"]))
+        tagline = "That's one epic coding session!"
+        longest.append(f"\n\n{pad}{tagline}\n", style=Style(color=COLORS["gray"]))
         longest.append("\n\n")
         labeled_frames.append((longest, "conversation"))
 
@@ -913,8 +921,9 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
     cast.append(vertical_center(8))
     cast.append(f"{pad}S T A R R I N G\n\n", style=Style(color=COLORS["purple"], bold=True))
     for model, count in stats.models_used.most_common(3):
-        cast.append(f"{pad}Claude {model}", style=Style(color=COLORS["white"], bold=True))
-        cast.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
+        label = f"Claude {model}"
+        cast.append(f"{pad}{label:<{label_width}}", style=Style(color=COLORS["white"], bold=True))
+        cast.append(f"{count:>{value_width},} messages\n", style=Style(color=COLORS["gray"]))
     cast.append("\n\n\n")
     labeled_frames.append((cast, "starring"))
 
@@ -924,8 +933,8 @@ def create_credits_roll(stats: WrappedStats, console_width: int = 80, console_he
         projects.append(vertical_center(10))
         projects.append(f"{pad}P R O J E C T S\n\n", style=Style(color=COLORS["blue"], bold=True))
         for proj, count in stats.top_projects[:5]:
-            projects.append(f"{pad}{proj}", style=Style(color=COLORS["white"], bold=True))
-            projects.append(f"  ({count:,} messages)\n", style=Style(color=COLORS["gray"]))
+            projects.append(f"{pad}{proj:<{label_width}}", style=Style(color=COLORS["white"], bold=True))
+            projects.append(f"{count:>{value_width},} messages\n", style=Style(color=COLORS["gray"]))
         projects.append("\n\n\n")
         labeled_frames.append((projects, "projects"))
 
@@ -984,23 +993,27 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
     # === CINEMATIC MODE ===
     if animate:
-        # Loading - centered vertically and full width
+        # Loading - centered vertically with full-width bar
         console.clear()
 
-        # Calculate vertical centering
+        # Calculate vertical centering (text + bar = 3 lines)
         terminal_height = console.height
-        vertical_padding = (terminal_height // 2) - 1
+        vertical_padding = (terminal_height // 2) - 2
         for _ in range(vertical_padding):
             console.print()
 
-        # Calculate bar width (full width minus text and spinner)
+        # Print text above the bar
         loading_text = "Unwrapping your history..." if stats.year is None else "Unwrapping your year..."
-        text_width = len(loading_text) + 4  # spinner + spacing
-        bar_width = max(20, console.width - text_width - 4)
+        text = Text()
+        text.append(":: ", style=Style(color=COLORS["orange"]))
+        text.append(loading_text, style=Style(bold=True))
+        console.print(Align.center(text))
+        console.print()
+
+        # Full-width progress bar (account for minimal padding)
+        bar_width = console.width - 4
 
         with Progress(
-            SpinnerColumn(style=COLORS["orange"]),
-            TextColumn(f"[bold]{loading_text}[/bold]"),
             BarColumn(complete_style=COLORS["orange"], finished_style=COLORS["green"], bar_width=bar_width),
             console=console,
             transient=True,
@@ -1084,11 +1097,11 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
         # Slide 3: Tokens with dramatic reveal
         def format_tokens_dramatic(tokens: int) -> str:
             if tokens >= 1_000_000_000:
-                return f"{tokens / 1_000_000_000:.1f} Bn"
+                return f"{tokens / 1_000_000_000:.1f} billion"
             if tokens >= 1_000_000:
-                return f"{tokens / 1_000_000:.0f} M"
+                return f"{tokens / 1_000_000:.0f} million"
             if tokens >= 1_000:
-                return f"{tokens / 1_000:.0f} K"
+                return f"{tokens / 1_000:.0f} thousand"
             return str(tokens)
 
         # Center vertically (~8 content lines)
@@ -1171,26 +1184,25 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
         console.print(Align.center(prompt_text))
         wait_for_keypress()
 
-    # PANEL 2: Personality + Days + Hours
+    # PANEL 2: Hours + Personality on top, Days below
     if animate:
         console.clear()
     console.print()
     console.print(create_dashboard_header(stats.year, console.width))
     console.print()
 
-    # Charts row - Days panel gets 2/3 of width
-    charts = Table(show_header=False, box=None, padding=(0, 1), expand=True)
-    charts.add_column(ratio=1)
-    charts.add_column(ratio=2)
-    days_width = (console.width * 2) // 3  # 2/3 of terminal width for Days panel
-    charts.add_row(
+    # Top row: Hours (left) | Your Type (right)
+    top_row = Table(show_header=False, box=None, padding=(0, 1), expand=True)
+    top_row.add_column(ratio=1)  # Hours
+    top_row.add_column(ratio=1)  # Your Type
+    top_row.add_row(
+        create_hour_chart(stats.hourly_distribution),
         create_personality_card(stats),
-        create_weekday_chart(stats.weekday_distribution, days_width),
     )
-    console.print(charts)
+    console.print(top_row)
 
-    # Hour chart
-    console.print(create_hour_chart(stats.hourly_distribution))
+    # Bottom row: Days (full width)
+    console.print(create_weekday_chart(stats.weekday_distribution, console.width - 4))
 
     if animate:
         console.print()
@@ -1279,11 +1291,11 @@ def render_wrapped(stats: WrappedStats, console: Console | None = None, animate:
 
         # Fun facts
         facts = get_fun_facts(stats)
-        pad = " " * (console.width // 4)
+        facts_pad = " " * (console.width // 6)  # Match create_fun_facts_slide padding
         if facts:
             console.print(create_fun_facts_slide(facts, console.width, console.height))
             prompt_text = Text()
-            prompt_text.append(f"{pad}press [ENTER] for the credits", style=Style(color=COLORS["dark"]))
+            prompt_text.append(f"{facts_pad}press [ENTER] for the credits", style=Style(color=COLORS["dark"]))
             console.print(prompt_text)
             wait_for_keypress()
             console.clear()

@@ -1,6 +1,6 @@
 {
   "name": "@da-trollefsen/claude-wrapped",
-  "version": "1.0.6",
+  "version": "1.0.4",
   "description": "Your history with Claude Code - a Spotify Wrapped style visual terminal experience.",
   "bin": {
     "claude-wrapped": "./bin/cli.js",
