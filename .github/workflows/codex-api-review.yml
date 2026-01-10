@@ -1,0 +1,138 @@
+name: Codex Code Review (API)
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+
+# Cancel in-progress reviews if a new one is triggered
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Code Review
+    runs-on: ubuntu-latest
+    # Run on PR events OR when someone comments "@codex review" on a PR
+    if: >
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@codex review'))
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    outputs:
+      review_output: ${{ steps.run_codex.outputs.final-message }}
+
+    steps:
+      - name: Get PR number
+        id: pr_number
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get PR details
+        id: pr_details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ steps.pr_number.outputs.number }}
+            });
+            core.setOutput('base_sha', pr.data.base.sha);
+            core.setOutput('head_sha', pr.data.head.sha);
+            core.setOutput('base_ref', pr.data.base.ref);
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ steps.pr_number.outputs.number }}/merge
+          fetch-depth: 0
+
+      - name: Fetch base and head refs
+        run: |
+          git fetch --no-tags origin \
+            ${{ steps.pr_details.outputs.base_ref }} \
+            +refs/pull/${{ steps.pr_number.outputs.number }}/head
+
+      - name: Run Codex Review
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          sandbox: read-only
+          model: codex-mini-latest
+          prompt: |
+            You are reviewing PR #${{ steps.pr_number.outputs.number }} in the ${{ github.repository }} repository.
+
+            Review ONLY the changes introduced by this PR between commits:
+            - Base: ${{ steps.pr_details.outputs.base_sha }}
+            - Head: ${{ steps.pr_details.outputs.head_sha }}
+
+            Use `git diff ${{ steps.pr_details.outputs.base_sha }}...${{ steps.pr_details.outputs.head_sha }}` to see the changes.
+
+            Focus your review on:
+            1. **Bugs & Logic Errors**: Identify potential bugs, edge cases, or incorrect logic
+            2. **Security Issues**: Flag any security vulnerabilities (XSS, injection, auth issues, etc.)
+            3. **Performance**: Note any obvious performance concerns
+            4. **Best Practices**: Suggest improvements for code quality and maintainability
+
+            Guidelines:
+            - Only report issues with HIGH confidence (P0/P1 severity)
+            - Be specific: reference file names and line numbers
+            - Be concise: no fluff, just actionable feedback
+            - If the code looks good, say so briefly
+            - Format your response in markdown
+
+            Do NOT:
+            - Nitpick style or formatting (we have linters for that)
+            - Suggest changes unrelated to the PR's purpose
+            - Report low-confidence or speculative issues
+
+  post_review:
+    name: Post Review Comment
+    runs-on: ubuntu-latest
+    needs: review
+    if: needs.review.outputs.review_output != ''
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Get PR number
+        id: pr_number
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post review comment
+        uses: actions/github-script@v7
+        env:
+          REVIEW_OUTPUT: ${{ needs.review.outputs.review_output }}
+        with:
+          script: |
+            const reviewBody = `## 🤖 Codex Code Review
+
+            ${process.env.REVIEW_OUTPUT}
+
+            ---
+            <sub>Powered by [OpenAI Codex](https://openai.com/codex/) via API</sub>`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ steps.pr_number.outputs.number }},
+              body: reviewBody
+            });
