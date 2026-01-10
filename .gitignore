@@ -38,5 +38,4 @@ htmlcov/
 .conductor/
 
 # Claude Code
-CLAUDE.md
 .claude/
